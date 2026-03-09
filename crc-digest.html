@@ -1,0 +1,3339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Interests — Literature Digest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:           #0f1318;
+      --bg2:          #141920;
+      --surface:      #1a2030;
+      --surface2:     #1f2737;
+      --border:       #252e3d;
+      --border2:      #2d3848;
+      --accent:       #7c9ef5;
+      --accent2:      #5b82f0;
+      --accent-glow:  rgba(124,158,245,0.15);
+      --accent-dim:   rgba(124,158,245,0.08);
+      --gold:         #e8b96a;
+      --gold-dim:     rgba(232,185,106,0.12);
+      --text:         #dce6f5;
+      --text2:        #a8b8d0;
+      --muted:        #5c6f88;
+      --tag-bg:       #1c2640;
+      --tag-text:     #7c9ef5;
+      --warn:         #f0a060;
+      --sidebar-w:    220px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(124,158,245,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,158,245,0.025) 1px, transparent 1px);
+      background-size: 44px 44px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #0d1520 0%, #111827 60%, #0f1a2e 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 28px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 2px 28px rgba(0,0,0,0.45);
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent 0%, var(--accent2) 40%, var(--accent) 60%, transparent 100%);
+      opacity: 0.35;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--accent2) 0%, #3d5bd4 100%);
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      box-shadow: 0 0 20px rgba(91,130,240,0.35);
+    }
+
+    .site-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--accent);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+      opacity: 0.75;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(17px, 2vw, 22px);
+      font-weight: 600;
+      line-height: 1.1;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+      font-weight: 400;
+    }
+
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(124,158,245,0.09);
+      border: 1px solid rgba(124,158,245,0.22);
+      padding: 4px 11px;
+      border-radius: 20px;
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    .live-pill::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(124,158,245,0.5); }
+      50%       { opacity: 0.45; box-shadow: 0 0 0 5px rgba(124,158,245,0); }
+    }
+
+    .hdivider { width: 1px; height: 14px; background: var(--border2); }
+
+    .header-link {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .header-link:hover { color: var(--accent); }
+
+    /* ── Layout ── */
+    .body-wrap {
+      display: flex;
+      flex: 1;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      position: sticky;
+      top: 75px;
+      height: calc(100vh - 75px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border2) transparent;
+      padding: 18px 0 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .sidebar::-webkit-scrollbar { width: 3px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    .sidebar-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 4px 18px 10px;
+      opacity: 0.6;
+    }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      background: none;
+      border: none;
+      border-left: 2px solid transparent;
+      color: var(--text2);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      padding: 9px 14px 9px 16px;
+      cursor: grab;
+      text-align: left;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      user-select: none;
+      line-height: 1.3;
+    }
+
+    .tab-btn:hover {
+      background: var(--accent-dim);
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      background: var(--accent-glow);
+      border-left-color: var(--accent);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .tab-btn.dragging { opacity: 0.25; cursor: grabbing; }
+
+    .tab-btn.drag-over {
+      background: rgba(124,158,245,0.1);
+      border-left-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .tab-drag-grip {
+      margin-left: auto;
+      opacity: 0;
+      color: var(--muted);
+      font-size: 11px;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+    .tab-btn:hover .tab-drag-grip { opacity: 1; }
+
+    /* ── Main ── */
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      background: rgba(20,25,32,0.95);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--border);
+      padding: 9px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 75px;
+      z-index: 100;
+    }
+
+    .query-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .query-display span { color: var(--text2); }
+
+    .controls-right {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .edit-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .edit-btn:hover {
+      color: var(--accent);
+      border-color: rgba(124,158,245,0.4);
+      background: var(--accent-dim);
+    }
+
+    .refresh-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, var(--accent2) 0%, #4568e0 100%);
+      border: none;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      box-shadow: 0 2px 14px rgba(91,130,240,0.35);
+      letter-spacing: 0.02em;
+    }
+    .refresh-btn:hover { opacity: 0.88; box-shadow: 0 4px 22px rgba(91,130,240,0.5); }
+    .refresh-btn:active { transform: scale(0.97); }
+    .refresh-btn svg { width: 12px; height: 12px; transition: transform 0.5s ease; }
+    .refresh-btn.spinning svg { transform: rotate(360deg); }
+
+    /* ── Query editor panel ── */
+    .query-editor {
+      display: none;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .query-editor.visible { display: flex; }
+
+    .query-editor textarea {
+      flex: 1;
+      min-width: 200px;
+      background: var(--bg);
+      border: 1px solid var(--accent2);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      line-height: 1.65;
+      padding: 10px 12px;
+      border-radius: 8px;
+      resize: vertical;
+      min-height: 68px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .query-editor textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124,158,245,0.1);
+    }
+
+    .editor-actions { display: flex; flex-direction: column; gap: 6px; }
+
+    .save-btn {
+      background: linear-gradient(135deg, var(--accent2), #4568e0);
+      border: none;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 7px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+    }
+    .save-btn:hover { opacity: 0.88; }
+
+    .reset-btn {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      padding: 7px 12px;
+      border-radius: 7px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .reset-btn:hover { color: var(--warn); border-color: var(--warn); }
+
+    .result-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid rgba(124,158,245,0.2);
+      padding: 3px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    /* ── Papers ── */
+    #paperArea {
+      padding: 28px 32px 60px;
+      max-width: 840px;
+    }
+
+    .status-msg {
+      padding: 80px 0;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .spinner {
+      width: 34px; height: 34px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .status-msg p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      line-height: 2;
+    }
+
+    .status-msg strong {
+      display: block;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 8px;
+    }
+
+    .status-icon {
+      font-size: 34px;
+      display: block;
+      margin-bottom: 14px;
+      line-height: 1;
+    }
+
+    /* ── Paper list ── */
+    .paper-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .paper-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .paper-card:nth-child(n)   { animation-delay: calc(var(--i, 0) * 0.04s); }
+    .paper-card:nth-child(1)   { animation-delay: 0.03s; }
+    .paper-card:nth-child(2)   { animation-delay: 0.06s; }
+    .paper-card:nth-child(3)   { animation-delay: 0.09s; }
+    .paper-card:nth-child(4)   { animation-delay: 0.12s; }
+    .paper-card:nth-child(5)   { animation-delay: 0.15s; }
+
+    .paper-card:hover {
+      border-color: var(--border2);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.22);
+    }
+
+    .card-body { padding: 18px 22px 16px; }
+
+    .paper-meta {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .paper-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+
+    .journal-tag {
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .pub-date {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .pmid-badge {
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      color: var(--gold);
+      background: var(--gold-dim);
+      border: 1px solid rgba(232,185,106,0.25);
+      padding: 2px 9px;
+      border-radius: 4px;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.18s, border-color 0.18s;
+    }
+    .pmid-badge:hover {
+      background: rgba(232,185,106,0.2);
+      border-color: rgba(232,185,106,0.5);
+    }
+
+    .paper-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.42;
+      color: var(--text);
+      margin-bottom: 9px;
+    }
+
+    .paper-authors {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── Abstract — always visible ── */
+    .abstract-section {
+      background: linear-gradient(180deg, rgba(124,158,245,0.03) 0%, transparent 100%);
+      border-top: 1px solid var(--border);
+      padding: 16px 22px 20px;
+    }
+
+    .abstract-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      opacity: 0.75;
+    }
+
+    .abstract-text {
+      font-size: 13.5px;
+      line-height: 1.82;
+      color: var(--text2);
+      font-weight: 300;
+    }
+
+    .pubmed-cta { margin-top: 14px; }
+
+    .pubmed-cta a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent);
+      text-decoration: none;
+      border: 1px solid rgba(124,158,245,0.28);
+      padding: 6px 14px;
+      border-radius: 7px;
+      background: var(--accent-dim);
+      transition: background 0.18s, border-color 0.18s;
+    }
+    .pubmed-cta a:hover {
+      background: rgba(124,158,245,0.14);
+      border-color: rgba(124,158,245,0.5);
+    }
+
+    /* ── Settings panel ── */
+    .settings-btn {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .settings-btn:hover { color: var(--text); border-color: var(--border2); }
+
+    .settings-panel {
+      display: none;
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: 360px;
+      background: var(--surface);
+      border-left: 1px solid var(--border2);
+      box-shadow: -8px 0 40px rgba(0,0,0,0.45);
+      z-index: 500;
+      overflow-y: auto;
+      animation: slideIn 0.22s ease;
+    }
+    .settings-panel.visible { display: block; }
+
+    @keyframes slideIn {
+      from { transform: translateX(40px); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+
+    .settings-inner { padding: 24px; }
+
+    .settings-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+
+    .settings-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: color 0.2s, background 0.2s;
+    }
+    .settings-close:hover { color: var(--text); background: var(--border); }
+
+    .settings-section {
+      margin-bottom: 28px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-section:last-child { border-bottom: none; }
+
+    .settings-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .settings-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 400;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid rgba(124,158,245,0.2);
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+
+    .settings-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 14px;
+    }
+    .settings-desc a { color: var(--accent); }
+    .settings-desc code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      background: var(--bg);
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: var(--text2);
+    }
+
+    .settings-row {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .settings-input {
+      flex: 1;
+      min-width: 160px;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 8px 12px;
+      border-radius: 7px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .settings-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124,158,245,0.1);
+    }
+
+    /* ── Card action buttons ── */
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .btn-save, .btn-pdf {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 5px 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid;
+      transition: all 0.18s;
+      white-space: nowrap;
+    }
+
+    .btn-save {
+      color: var(--text2);
+      border-color: var(--border2);
+      background: none;
+    }
+    .btn-save:hover {
+      color: var(--accent);
+      border-color: rgba(124,158,245,0.4);
+      background: var(--accent-dim);
+    }
+    .btn-save.saved {
+      color: var(--accent);
+      border-color: rgba(124,158,245,0.4);
+      background: var(--accent-dim);
+    }
+
+    .btn-pdf {
+      color: var(--gold);
+      border-color: rgba(232,185,106,0.25);
+      background: var(--gold-dim);
+    }
+    .btn-pdf:hover {
+      background: rgba(232,185,106,0.2);
+      border-color: rgba(232,185,106,0.5);
+    }
+
+    /* ── Tab PDF download button ── */
+    .tab-pdf-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--gold-dim);
+      border: 1px solid rgba(232,185,106,0.28);
+      color: var(--gold);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.18s;
+      white-space: nowrap;
+    }
+    .tab-pdf-btn:hover {
+      background: rgba(232,185,106,0.2);
+      border-color: rgba(232,185,106,0.5);
+    }
+    .tab-pdf-btn:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    /* ── Saved papers sidebar entry ── */
+    .sidebar-saved-btn {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      background: none;
+      border: none;
+      border-left: 2px solid transparent;
+      color: var(--text2);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      padding: 9px 14px 9px 16px;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, color 0.15s;
+      margin-top: auto;
+      border-top: 1px solid var(--border);
+    }
+    .sidebar-saved-btn:hover {
+      background: var(--accent-dim);
+      color: var(--text);
+    }
+
+    .saved-count-badge {
+      margin-left: auto;
+      background: rgba(124,158,245,0.18);
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      font-weight: 500;
+      padding: 1px 7px;
+      border-radius: 10px;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    /* ── Saved papers panel ── */
+    .saved-panel {
+      display: none;
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: 420px;
+      background: var(--surface);
+      border-left: 1px solid var(--border2);
+      box-shadow: -8px 0 48px rgba(0,0,0,0.5);
+      z-index: 500;
+      overflow-y: auto;
+      animation: slideIn 0.22s ease;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border2) transparent;
+    }
+    .saved-panel.visible { display: block; }
+
+    .saved-panel-inner { padding: 22px; }
+
+    .saved-panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .saved-panel-sub {
+      font-size: 11.5px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 18px;
+    }
+
+    .saved-panel-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .saved-group-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      color: var(--accent);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      margin-top: 18px;
+      opacity: 0.75;
+    }
+
+    .saved-paper-item {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 13px 15px;
+      margin-bottom: 8px;
+    }
+
+    .saved-paper-meta {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin-bottom: 7px;
+    }
+
+    .saved-paper-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 13.5px;
+      font-weight: 400;
+      line-height: 1.4;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
+
+    .saved-paper-authors {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    .saved-paper-actions {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .btn-sm-pdf {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 11px;
+      border-radius: 5px;
+      cursor: pointer;
+      color: var(--gold);
+      border: 1px solid rgba(232,185,106,0.25);
+      background: var(--gold-dim);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-sm-pdf:hover { background: rgba(232,185,106,0.2); border-color: rgba(232,185,106,0.5); }
+
+    .btn-sm-remove {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 11px;
+      border-radius: 5px;
+      cursor: pointer;
+      color: var(--muted);
+      border: 1px solid var(--border2);
+      background: none;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-sm-remove:hover { color: #f07070; border-color: rgba(240,112,112,0.4); }
+
+    .btn-sm-pubmed {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 11px;
+      border-radius: 5px;
+      text-decoration: none;
+      color: var(--accent);
+      border: 1px solid rgba(124,158,245,0.28);
+      background: var(--accent-dim);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-sm-pubmed:hover { background: rgba(124,158,245,0.14); border-color: rgba(124,158,245,0.5); }
+
+    .saved-empty {
+      text-align: center;
+      padding: 48px 0;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      line-height: 2;
+    }
+
+    /* ── Key Papers section ── */
+    .key-papers-section {
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, rgba(124,158,245,0.05) 0%, rgba(232,185,106,0.03) 100%);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .key-papers-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      border-bottom: 1px solid transparent;
+    }
+
+    .key-papers-section:has(.key-papers-body[style*="block"]) .key-papers-header {
+      border-bottom-color: var(--border);
+    }
+
+    .key-papers-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .key-pin { font-size: 13px; }
+
+    .key-count-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      color: var(--gold);
+      background: var(--gold-dim);
+      border: 1px solid rgba(232,185,106,0.25);
+      padding: 1px 8px;
+      border-radius: 10px;
+    }
+
+    .key-papers-toggle {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      font-family: 'Inter', sans-serif;
+      font-size: 11.5px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .key-papers-toggle:hover { color: var(--accent); border-color: rgba(124,158,245,0.4); background: var(--accent-dim); }
+
+    .key-papers-body { padding: 14px 18px 16px; }
+
+    .key-add-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .key-pmid-input {
+      flex: 1;
+      min-width: 160px;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      padding: 7px 12px;
+      border-radius: 7px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .key-pmid-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,158,245,0.1); }
+
+    .key-add-status {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      min-width: 80px;
+    }
+
+    .key-empty {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      color: var(--muted);
+      padding: 16px 0 8px;
+    }
+
+    .key-paper-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+
+    .key-abstract-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--gold);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      opacity: 0.8;
+    }
+
+    /* ── Live results divider ── */
+    .live-results-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 6px 0 18px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+    }
+    .live-results-divider::before,
+    .live-results-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Classical tab ── */
+    .classical-wrap { padding-bottom: 24px; }
+
+    .classical-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .classical-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .classical-sub {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .classical-add-box {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 24px;
+    }
+
+    .classical-add-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .classical-add-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .classical-divider {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .classical-divider::before, .classical-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .classical-manual-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       FEATURES 1–8 — New badges, notes, read tracking, filters,
+       AI summaries, DOI, duplicates, journal prefs
+       ══════════════════════════════════════════════════════════ */
+
+    /* ── 1. New-since-last-visit badges ── */
+    .tab-new-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #3d8b5e;
+      color: #a8f0c8;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 8px;
+      margin-left: 5px;
+      line-height: 1.6;
+      white-space: nowrap;
+    }
+
+    .card-new-badge {
+      background: rgba(61,139,94,0.15);
+      color: #5dd89a;
+      border: 1px solid rgba(61,139,94,0.3);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      font-weight: 600;
+      padding: 1px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    /* ── 2. Notes ── */
+    .note-section {
+      border-top: 1px solid var(--border);
+      padding: 12px 22px 14px;
+      display: none;
+    }
+    .note-section.open { display: block; animation: slideDown 0.18s ease; }
+
+    .note-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--gold);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+      opacity: 0.8;
+    }
+
+    .note-textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      font-family: 'Inter', sans-serif;
+      font-size: 12.5px;
+      line-height: 1.65;
+      padding: 9px 12px;
+      border-radius: 7px;
+      resize: vertical;
+      min-height: 68px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .note-textarea:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(232,185,106,0.08);
+    }
+    .note-save-indicator {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 5px;
+      min-height: 14px;
+    }
+
+    /* ── 3. Read / Unread ── */
+    .paper-card.unread {
+      border-left: 3px solid rgba(124,158,245,0.5);
+    }
+    .paper-card.unread .paper-title { color: #eef3fd; }
+
+    .unread-dot {
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .tab-unread-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(124,158,245,0.18);
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 8px;
+      margin-left: 4px;
+      white-space: nowrap;
+    }
+
+    .btn-read {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 5px 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid var(--border2);
+      background: none;
+      color: var(--text2);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-read:hover { color: #5dd89a; border-color: rgba(93,216,154,0.35); background: rgba(93,216,154,0.07); }
+    .btn-read.is-read { color: #5dd89a; border-color: rgba(93,216,154,0.3); background: rgba(93,216,154,0.07); }
+
+    .btn-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 5px 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid var(--border2);
+      background: none;
+      color: var(--text2);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-note:hover { color: var(--gold); border-color: rgba(232,185,106,0.35); background: var(--gold-dim); }
+    .btn-note.has-note { color: var(--gold); border-color: rgba(232,185,106,0.3); background: var(--gold-dim); }
+
+    .mark-read-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(93,216,154,0.08);
+      border: 1px solid rgba(93,216,154,0.25);
+      color: #5dd89a;
+      font-family: 'Inter', sans-serif;
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .mark-read-btn:hover { background: rgba(93,216,154,0.14); }
+
+    /* ── 4. Filter bar ── */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 28px 10px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .filter-input {
+      flex: 1;
+      min-width: 200px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 7px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .filter-input:focus { border-color: var(--accent); }
+
+    .filter-select {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 7px;
+      outline: none;
+      cursor: pointer;
+      max-width: 200px;
+    }
+
+    .filter-toggle {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 11.5px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .filter-toggle.active {
+      background: var(--accent-dim);
+      border-color: rgba(124,158,245,0.4);
+      color: var(--accent);
+    }
+
+    .filter-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      color: var(--muted);
+      white-space: nowrap;
+      margin-left: auto;
+    }
+
+    .filter-toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 11.5px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .filter-toggle-btn:hover, .filter-toggle-btn.active {
+      color: var(--accent);
+      border-color: rgba(124,158,245,0.4);
+      background: var(--accent-dim);
+    }
+
+    .journal-prefs-btn {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 11.5px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .journal-prefs-btn:hover, .journal-prefs-btn.active {
+      color: var(--gold);
+      border-color: rgba(232,185,106,0.35);
+      background: var(--gold-dim);
+    }
+
+    /* ── 5. AI Summary ── */
+    .ai-summary-section {
+      border-top: 1px solid var(--border);
+      padding: 12px 22px 14px;
+      display: none;
+    }
+    .ai-summary-section.open { display: block; animation: slideDown 0.18s ease; }
+
+    .ai-summary-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: #a78bfa;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      opacity: 0.85;
+    }
+
+    .ai-summary-text {
+      font-size: 13.5px;
+      line-height: 1.78;
+      color: var(--text2);
+      font-style: italic;
+    }
+
+    .ai-summary-text.loading {
+      color: var(--muted);
+      font-style: normal;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+
+    .btn-ai {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 5px 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid rgba(167,139,250,0.3);
+      background: rgba(167,139,250,0.07);
+      color: #a78bfa;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-ai:hover { background: rgba(167,139,250,0.14); border-color: rgba(167,139,250,0.5); }
+
+    /* ── 6. DOI / full-text link ── */
+    .doi-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 5px 13px;
+      border-radius: 6px;
+      text-decoration: none;
+      color: var(--text2);
+      border: 1px solid var(--border2);
+      background: none;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .doi-link:hover { color: var(--text); border-color: var(--border2); background: var(--surface2); }
+
+    /* ── 7. Duplicate badge ── */
+    .duplicate-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      color: var(--muted);
+      background: rgba(92,111,136,0.12);
+      border: 1px solid rgba(92,111,136,0.25);
+      padding: 1px 7px;
+      border-radius: 4px;
+      white-space: nowrap;
+      cursor: default;
+    }
+
+    .paper-card.is-duplicate { opacity: 0.72; }
+    .paper-card.is-duplicate:hover { opacity: 1; }
+
+    /* ── 8. Priority journal badge ── */
+    .priority-star {
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .paper-card.is-priority {
+      border-left: 3px solid rgba(232,185,106,0.6);
+    }
+    .paper-card.is-priority.unread {
+      border-left: 3px solid var(--gold);
+    }
+
+    /* ── Journal prefs editor ── */
+    .journal-prefs-editor {
+      display: none;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px 16px;
+    }
+    .journal-prefs-editor.visible { display: block; }
+    .journal-prefs-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 14px 28px;
+      font-size: 10.5px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 2;
+      background: var(--bg2);
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+
+    /* ── Mobile ── */
+    @media (max-width: 700px) {
+      .body-wrap { flex-direction: column; }
+
+      .sidebar {
+        width: 100%; height: auto;
+        position: static;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        flex-direction: row;
+        padding: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        gap: 0;
+      }
+      .sidebar::-webkit-scrollbar { display: none; }
+      .sidebar-label { display: none; }
+
+      .tab-btn {
+        border-left: none;
+        border-bottom: 2px solid transparent;
+        padding: 12px 15px 10px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .tab-btn.active {
+        border-bottom-color: var(--accent);
+        border-left-color: transparent;
+      }
+      .tab-drag-grip { display: none; }
+      .controls { top: 0; }
+      #paperArea { padding: 18px 16px 48px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="header-left">
+      <div class="header-icon">🔬</div>
+      <div>
+        <div class="site-label">Literature Digest &nbsp;·&nbsp; Live &nbsp;·&nbsp; PubMed</div>
+        <h1>My Interests &nbsp;<em>Literature Digest</em></h1>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="live-pill">Live</span>
+      <span class="hdivider"></span>
+      <a class="header-link" href="https://pubmed.ncbi.nlm.nih.gov" target="_blank">pubmed.ncbi.nlm.nih.gov</a>
+      <span class="hdivider"></span>
+      <span>180 days</span>
+      <span class="hdivider"></span>
+      <button class="settings-btn" id="settingsBtn" onclick="toggleSettings()">⚙ Settings</button>
+    </div>
+  </header>
+
+  <!-- ── Settings panel ── -->
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-inner">
+      <div class="settings-title">
+        <span>⚙ Settings</span>
+        <button class="settings-close" onclick="toggleSettings()">✕</button>
+      </div>
+      <div class="settings-section">
+        <div class="settings-label">NCBI API Key <span class="settings-badge">Optional · Free</span></div>
+        <div class="settings-desc">
+          An API key raises your rate limit from 3 to 10 requests/second — useful when loading many papers.
+          Get a free key at <a href="https://www.ncbi.nlm.nih.gov/account/" target="_blank">ncbi.nlm.nih.gov/account</a>.
+        </div>
+        <div class="settings-row">
+          <input type="text" id="apiKeyInput" class="settings-input" placeholder="Paste your NCBI API key here…" spellcheck="false"/>
+          <button class="save-btn" onclick="saveApiKey()">Save</button>
+          <button class="reset-btn" onclick="clearApiKey()">Clear</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-label">Time window</div>
+        <div class="settings-desc">Currently showing papers from the last <strong style="color:var(--accent)">180 days</strong>. To change, edit <code>const DAYS = 180</code> in the HTML file.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-wrap">
+
+    <nav class="sidebar" id="tabBar">
+      <div class="sidebar-label">Topics</div>
+    </nav>
+
+    <!-- Saved Papers panel -->
+    <div class="saved-panel" id="savedPanel">
+      <div class="saved-panel-inner">
+        <div class="saved-panel-title">
+          📚 Saved Papers
+          <button class="settings-close" onclick="closeSavedPanel()">✕</button>
+        </div>
+        <div class="saved-panel-sub" id="savedPanelSub">0 papers saved</div>
+        <div class="saved-panel-actions">
+          <button class="tab-pdf-btn" onclick="downloadAllSavedPDF()" id="downloadAllSavedBtn">↓ Download all as PDF</button>
+          <button class="reset-btn" onclick="clearAllSaved()">Clear all</button>
+        </div>
+        <div id="savedPanelList"></div>
+      </div>
+    </div>
+
+    <div class="main-content">
+
+      <div class="controls">
+        <div class="query-display"><span id="queryText">—</span></div>
+        <div class="controls-right">
+          <span id="resultCount" class="result-count"></span>
+          <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilterBar()" title="Filter papers">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="6" y1="12" x2="10" y2="12"/></svg>
+            Filter
+          </button>
+          <button class="journal-prefs-btn" id="journalPrefsBtn" onclick="toggleJournalPrefs()" title="Set preferred journals">⭐ Journals</button>
+          <button class="mark-read-btn" id="markAllReadBtn" onclick="markAllReadInTab()" title="Mark all as read" style="display:none">✓ Mark all read</button>
+          <button class="tab-pdf-btn" id="tabPdfBtn" onclick="downloadTabPDF()" disabled title="Download all papers in this tab as PDF">
+            ↓ Tab PDF
+          </button>
+          <button class="edit-btn" id="editBtn" onclick="toggleEditor()">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3L5 14H2v-3L11 2z"/></svg>
+            Edit query
+          </button>
+          <button class="refresh-btn" id="refreshBtn" onclick="loadTab(currentTab)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 4s1.5-3 7-3a7 7 0 0 1 7 7"/>
+              <path d="M15 12s-1.5 3-7 3a7 7 0 0 1-7-7"/>
+              <polyline points="1 1 1 4 4 4"/>
+              <polyline points="15 15 15 12 12 12"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="query-editor" id="queryEditor">
+        <textarea id="queryTextarea" rows="3" spellcheck="false" placeholder="Enter PubMed query…"></textarea>
+        <div class="editor-actions">
+          <button class="save-btn" onclick="saveQuery()">Save &amp; Search</button>
+          <button class="reset-btn" onclick="resetQuery()">Reset to default</button>
+        </div>
+      </div>
+
+      <!-- ── Journal prefs editor ── -->
+      <div class="journal-prefs-editor" id="journalPrefsEditor">
+        <div class="journal-prefs-title">⭐ Preferred Journals <span style="font-weight:400;color:var(--muted);font-size:11px">— comma-separated, partial matches OK</span></div>
+        <input type="text" id="journalPrefsInput" class="key-pmid-input" style="width:100%;margin-bottom:10px"
+          placeholder="e.g. NEJM, Lancet, Journal of Clinical Oncology, Gut…" spellcheck="false"/>
+        <div class="editor-actions">
+          <button class="save-btn" onclick="saveJournalPrefs()">Save</button>
+          <button class="reset-btn" onclick="clearJournalPrefs()">Clear</button>
+          <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-left:8px">Matching papers will be highlighted with ⭐</span>
+        </div>
+      </div>
+
+      <!-- ── Filter bar ── -->
+      <div class="filter-bar" id="filterBar" style="display:none">
+        <input type="text" id="filterKeyword" class="filter-input" placeholder="Filter by keyword in title or abstract…"
+          oninput="applyFilters()" spellcheck="false"/>
+        <select id="filterJournal" class="filter-select" onchange="applyFilters()">
+          <option value="">All journals</option>
+        </select>
+        <button class="filter-toggle" id="filterUnreadBtn" onclick="toggleFilterUnread()">Unread only</button>
+        <button class="filter-toggle" id="filterPriorityBtn" onclick="toggleFilterPriority()">⭐ Priority only</button>
+        <span id="filterCount" class="filter-count"></span>
+        <button class="reset-btn" style="padding:4px 10px;font-size:11px" onclick="clearFilters()">✕ Clear</button>
+      </div>
+
+      <div id="paperArea">
+        <div class="status-msg">
+          <div class="spinner"></div>
+          <p>Initialising…</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    Papers retrieved live from PubMed/MEDLINE via <a href="https://www.ncbi.nlm.nih.gov/home/develop/api/" target="_blank">NCBI E-utilities</a> ·
+    Abstracts fetched on demand · Updated each page load ·
+    For informational &amp; educational use only — not clinical guidance.
+  </footer>
+
+</div>
+
+<script>
+const TABS = [
+  { id: 'eocrc',       label: 'EOCRC',                    query: '("colorectal neoplasms"[MeSH]) AND ("early-onset"[tiab] OR "young-onset"[tiab] OR "early onset colorectal"[tiab] OR "young adults"[tiab] OR "adolescents"[tiab] OR "under 50"[tiab] OR "age of onset"[tiab]) AND ("colorectal"[tiab] OR "colon"[tiab] OR "rectal"[tiab])' },
+  { id: 'colon',       label: 'Colon Cancer',              query: '("colon cancer"[MeSH] OR "colon neoplasms"[MeSH]) NOT ("rectal neoplasms"[MeSH])' },
+  { id: 'rectal',      label: 'Rectal Cancer',             query: '("rectal neoplasms"[MeSH] OR "rectal cancer"[tiab]) AND ("treatment"[tiab] OR "surgery"[tiab] OR "radiotherapy"[tiab])' },
+  { id: 'msi',         label: 'MSS / MMRp',                query: '("colorectal neoplasms"[MeSH]) AND ("microsatellite stable"[tiab] OR "MSS"[tiab] OR "mismatch repair proficient"[tiab] OR "MMR-proficient"[tiab] OR "MMRp"[tiab] OR "sporadic colorectal cancer"[tiab] OR "sporadic colon cancer"[tiab] OR "sporadic colorectal neoplasm"[tiab])' },
+  { id: 'targeted',    label: 'Targeted & Immunotherapy',  query: '("colorectal neoplasms"[MeSH]) AND ("bevacizumab"[tiab] OR "cetuximab"[tiab] OR "panitumumab"[tiab] OR "KRAS"[tiab] OR "BRAF"[tiab] OR "HER2"[tiab] OR "regorafenib"[tiab] OR "immune checkpoint"[tiab] OR "PD-1"[tiab] OR "PD-L1"[tiab] OR "pembrolizumab"[tiab] OR "nivolumab"[tiab] OR "immunotherapy"[MeSH])' },
+  { id: 'surgery',     label: 'Surgery & TME',             query: '("colorectal neoplasms"[MeSH]) AND ("total mesorectal excision"[tiab] OR "TME"[tiab] OR "laparoscopic"[tiab] OR "robotic surgery"[tiab] OR "anastomosis"[tiab])' },
+  { id: 'liver',       label: 'Liver Metastases',          query: '("colorectal neoplasms"[MeSH]) AND ("liver metastases"[tiab] OR "hepatic metastases"[tiab] OR "hepatic resection"[tiab] OR "TACE"[tiab] OR "ablation"[tiab])' },
+  { id: 'tme',         label: 'Tumour Microenvironment',   query: '("colorectal neoplasms"[MeSH]) AND ("tumor microenvironment"[MeSH] OR "tumour microenvironment"[tiab] OR "tumor microenvironment"[tiab] OR "stromal cells"[tiab] OR "cancer-associated fibroblasts"[tiab] OR "tumour infiltrating lymphocytes"[tiab] OR "TIL"[tiab] OR "myeloid-derived suppressor"[tiab] OR "MDSC"[tiab])' },
+  { id: 'inflammation',label: 'Inflammation Inhibition',  query: '("colorectal neoplasms"[MeSH]) AND ("COX-2"[tiab] OR "cyclooxygenase"[tiab] OR "aspirin"[tiab] OR "NSAIDs"[tiab] OR "interleukin"[tiab] OR "NF-kB"[tiab] OR "JAK-STAT"[tiab] OR "IL-6"[tiab] OR "TNF"[tiab] OR "anti-inflammatory"[tiab] OR "inflammasome"[tiab])' },
+  { id: 'aging',       label: 'Aging & Inflammation',      query: '("colorectal neoplasms"[MeSH]) AND ("aging"[MeSH] OR "ageing"[tiab] OR "senescence"[tiab] OR "inflammaging"[tiab] OR "age-related"[tiab] OR "elderly"[tiab] OR "older adults"[tiab] OR "chronic inflammation"[tiab] OR "SASP"[tiab] OR "cellular senescence"[tiab])' },
+  { id: 'cfdna',       label: 'Cell-Free DNA',             query: '("colorectal neoplasms"[MeSH]) AND ("cell-free DNA"[tiab] OR "cfDNA"[tiab] OR "circulating tumor DNA"[tiab] OR "ctDNA"[tiab] OR "liquid biopsy"[tiab] OR "circulating free DNA"[tiab] OR "minimal residual disease"[tiab] OR "MRD"[tiab])' },
+  { id: 'qol',         label: 'Quality of Life',           query: '("colorectal neoplasms"[MeSH]) AND ("quality of life"[MeSH] OR "QoL"[tiab] OR "patient-reported outcomes"[tiab] OR "PRO"[tiab] OR "functional outcomes"[tiab] OR "survivorship"[tiab] OR "psychological"[tiab] OR "bowel function"[tiab] OR "stoma"[tiab] OR "sexual function"[tiab])' },
+  { id: 'classical',   label: '⭐ Classical Papers',        query: null, isManual: true },
+];
+
+const DAYS = 180;
+const NCBI_KEY_STORAGE = 'ncbi-api-key';
+
+function ncbiKey() {
+  return localStorage.getItem(NCBI_KEY_STORAGE) || '';
+}
+
+function ncbiParams(base) {
+  const key = ncbiKey();
+  if (key) base.api_key = key;
+  return new URLSearchParams(base);
+}
+const BASE_SEARCH  = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi';
+const BASE_FETCH   = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi';
+const BASE_SUMMARY = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi';
+
+let currentTab = 0;
+let abstractCache = {};
+
+// ── API Key settings ──────────────────────────────────────────────────────────
+function toggleSettings() {
+  const panel = document.getElementById('settingsPanel');
+  const isVisible = panel.classList.toggle('visible');
+  if (isVisible) {
+    document.getElementById('apiKeyInput').value = ncbiKey();
+  }
+}
+
+function saveApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (val) localStorage.setItem(NCBI_KEY_STORAGE, val);
+  else localStorage.removeItem(NCBI_KEY_STORAGE);
+  document.getElementById('settingsPanel').classList.remove('visible');
+  updateKeyIndicator();
+}
+
+function clearApiKey() {
+  localStorage.removeItem(NCBI_KEY_STORAGE);
+  document.getElementById('apiKeyInput').value = '';
+  updateKeyIndicator();
+}
+
+function updateKeyIndicator() {
+  const btn = document.getElementById('settingsBtn');
+  const hasKey = !!ncbiKey();
+  btn.innerHTML = hasKey
+    ? `⚙ Settings <span style="color:var(--accent);font-size:8px;margin-left:2px">●</span>`
+    : `⚙ Settings`;
+}
+
+// ── Storage helpers ───────────────────────────────────────────────────────────
+const STORAGE_KEY   = 'crc-digest-queries';
+const TAB_ORDER_KEY = 'crc-digest-tab-order';
+
+function savedQueries() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
+}
+
+function getTabOrder() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(TAB_ORDER_KEY));
+    const ids = TABS.map(t => t.id);
+    if (saved && saved.length === TABS.length && saved.every(id => ids.includes(id))) return saved;
+  } catch {}
+  return TABS.map(t => t.id);
+}
+
+function saveTabOrder(order) { localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(order)); }
+
+function getOrderedTabs() {
+  return getTabOrder().map(id => TABS.find(t => t.id === id));
+}
+
+function getQuery(i) {
+  const tab = getOrderedTabs()[i];
+  return savedQueries()[tab.id] || tab.query;
+}
+
+// ── Editor ────────────────────────────────────────────────────────────────────
+const PENCIL = `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3L5 14H2v-3L11 2z"/></svg>`;
+const CLOSE  = `<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="13" y2="13"/><line x1="13" y1="1" x2="1" y2="13"/></svg>`;
+
+function toggleEditor() {
+  const editor = document.getElementById('queryEditor');
+  const isVisible = editor.classList.toggle('visible');
+  const btn = document.getElementById('editBtn');
+  if (isVisible) {
+    document.getElementById('queryTextarea').value = getQuery(currentTab);
+    btn.innerHTML = `${CLOSE} Close`;
+  } else {
+    const isCustom = !!savedQueries()[getOrderedTabs()[currentTab].id];
+    btn.innerHTML = `${PENCIL} Edit query${isCustom ? ' <span style="color:var(--accent);font-size:8px">●</span>' : ''}`;
+  }
+}
+
+function saveQuery() {
+  const val = document.getElementById('queryTextarea').value.trim();
+  if (!val) return;
+  const saved = savedQueries();
+  saved[getOrderedTabs()[currentTab].id] = val;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+  document.getElementById('queryEditor').classList.remove('visible');
+  loadTab(currentTab);
+}
+
+function resetQuery() {
+  const saved = savedQueries();
+  delete saved[getOrderedTabs()[currentTab].id];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+  document.getElementById('queryTextarea').value = getOrderedTabs()[currentTab].query;
+  loadTab(currentTab);
+  document.getElementById('queryEditor').classList.remove('visible');
+}
+
+// ── Build tabs ────────────────────────────────────────────────────────────────
+let dragSrcIndex = null;
+
+function buildTabs() {
+  const bar = document.getElementById('tabBar');
+  bar.querySelectorAll('.tab-btn').forEach(b => b.remove());
+  const ordered = getOrderedTabs();
+
+  ordered.forEach((t, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
+    btn.dataset.tabId = t.id;
+    btn.setAttribute('data-tab-id', t.id);
+    btn.draggable = true;
+    btn.innerHTML = `${escHtml(t.label)}<span class="tab-drag-grip">⠿</span>`;
+    btn.onclick = () => { currentTab = i; loadTab(i); };
+
+    btn.addEventListener('dragstart', e => { dragSrcIndex = i; btn.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+    btn.addEventListener('dragend', () => { btn.classList.remove('dragging'); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('drag-over')); });
+    btn.addEventListener('dragover', e => { e.preventDefault(); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('drag-over')); btn.classList.add('drag-over'); });
+    btn.addEventListener('dragleave', () => btn.classList.remove('drag-over'));
+    btn.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragSrcIndex === null || dragSrcIndex === i) return;
+      const order = getTabOrder();
+      const moved = order.splice(dragSrcIndex, 1)[0];
+      order.splice(i, 0, moved);
+      saveTabOrder(order);
+      const activeId = getOrderedTabs()[currentTab]?.id;
+      buildTabs();
+      const newIdx = getOrderedTabs().findIndex(t => t.id === activeId);
+      currentTab = newIdx >= 0 ? newIdx : 0;
+      setActiveTab(currentTab);
+    });
+
+    bar.appendChild(btn);
+  });
+
+  // Saved Papers button pinned at bottom of sidebar
+  let savedBtn = document.getElementById('sidebarSavedBtn');
+  if (!savedBtn) {
+    savedBtn = document.createElement('button');
+    savedBtn.className = 'sidebar-saved-btn';
+    savedBtn.id = 'sidebarSavedBtn';
+    savedBtn.onclick = openSavedPanel;
+    bar.appendChild(savedBtn);
+  }
+  updateSavedCount();
+}
+
+function setActiveTab(i) {
+  document.querySelectorAll('.tab-btn').forEach((b, j) => b.classList.toggle('active', j === i));
+}
+
+// ── PubMed fetching ───────────────────────────────────────────────────────────
+function minDate() {
+  const d = new Date(); d.setDate(d.getDate() - DAYS);
+  return d.toISOString().slice(0, 10).replace(/-/g, '/');
+}
+
+async function searchPubMed(query) {
+  // First get the total count
+  const countRes = await fetch(`${BASE_SEARCH}?${ncbiParams({
+    db: 'pubmed', retmode: 'json', retmax: 0,
+    datetype: 'pdat', mindate: minDate(),
+    maxdate: new Date().toISOString().slice(0, 10).replace(/-/g, '/'), term: query,
+  })}`);
+  if (!countRes.ok) throw new Error('Search failed: ' + countRes.status);
+  const total = parseInt((await countRes.json()).esearchresult?.count ?? '0', 10);
+  if (!total) return [];
+
+  const retmax = Math.min(total, 500);
+  const res = await fetch(`${BASE_SEARCH}?${ncbiParams({
+    db: 'pubmed', retmode: 'json', retmax, sort: 'pub+date',
+    datetype: 'pdat', mindate: minDate(),
+    maxdate: new Date().toISOString().slice(0, 10).replace(/-/g, '/'), term: query,
+  })}`);
+  if (!res.ok) throw new Error('Search failed: ' + res.status);
+  return (await res.json()).esearchresult?.idlist ?? [];
+}
+
+// Fetch summaries in chunks of 200 (NCBI limit per request)
+async function fetchSummaries(ids) {
+  if (!ids.length) return [];
+  const CHUNK = 200;
+  const chunks = [];
+  for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
+  const results = await Promise.all(chunks.map(async chunk => {
+    const res = await fetch(`${BASE_SUMMARY}?${ncbiParams({ db: 'pubmed', retmode: 'json', id: chunk.join(',') })}`);
+    if (!res.ok) throw new Error('Summary fetch failed');
+    const result = (await res.json()).result;
+    return chunk.map(id => result[id]).filter(Boolean);
+  }));
+  return results.flat();
+}
+
+// Batch-fetch all abstracts at once via MEDLINE text format
+async function batchFetchAbstracts(ids) {
+  if (!ids.length) return {};
+  const CHUNK = 100;
+  const map = {};
+  const chunks = [];
+  for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
+
+  await Promise.all(chunks.map(async chunk => {
+    const text = await (await fetch(`${BASE_FETCH}?${ncbiParams({
+      db: 'pubmed', retmode: 'text', rettype: 'medline', id: chunk.join(',')
+    })}`)).text();
+    const records = text.split(/\n\n+PMID-/);
+    records.forEach((rec, i) => {
+      const raw = i === 0 ? rec : 'PMID-' + rec;
+      const pmidMatch = raw.match(/PMID-\s*(\d+)/);
+      if (!pmidMatch) return;
+      const pmid = pmidMatch[1];
+      const lines = raw.split('\n');
+      let abstract = '';
+      let inAb = false;
+      for (const l of lines) {
+        if (l.startsWith('AB  - ')) { inAb = true; abstract = l.slice(6).trim(); }
+        else if (inAb && /^\s{6}/.test(l)) { abstract += ' ' + l.trim(); }
+        else if (inAb) { break; }
+      }
+      map[pmid] = abstract.trim() || '(No abstract available — view on PubMed.)';
+    });
+  }));
+  return map;
+}
+
+function formatAuthors(authors) {
+  if (!authors?.length) return 'Unknown authors';
+  return authors.map(a => a.name).join(', ');
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+let currentTabPapers = [];
+
+async function renderPapers(summaries, abstracts, container, opts = {}) {
+  const area = container || document.getElementById('paperArea');
+  if (!summaries.length) {
+    const msg = document.createElement('div');
+    msg.innerHTML = `<div class="status-msg"><span class="status-icon">📭</span><p>No papers found in the last ${DAYS} days for this query.</p></div>`;
+    area.appendChild(msg);
+    document.getElementById('tabPdfBtn').disabled = true;
+    return;
+  }
+
+  const { newPmids = new Set(), readSet = new Set(), notesMap = {}, journalPrefs = [], tabId = '' } = opts;
+
+  currentTabPapers = summaries.map(s => ({
+    pmid:     s.uid,
+    title:    s.title || '(No title)',
+    authors:  formatAuthors(s.authors),
+    abstract: abstracts[s.uid] || '(No abstract available.)',
+    journal:  s.fulljournalname || s.source || '',
+    pubdate:  s.pubdate || '',
+    tabId:    getOrderedTabs()[currentTab]?.id || '',
+    tabLabel: getOrderedTabs()[currentTab]?.label || '',
+    savedAt:  null,
+  }));
+
+  document.getElementById('tabPdfBtn').disabled = false;
+
+  // Populate journal filter dropdown
+  populateJournalFilter(summaries);
+
+  const list = document.createElement('div');
+  list.className = 'paper-list';
+
+  summaries.forEach((s, idx) => {
+    const pmid      = s.uid;
+    const pubdate   = s.pubdate || '';
+    const journal   = s.fulljournalname || s.source || '';
+    const title     = s.title || '(No title)';
+    const authors   = formatAuthors(s.authors);
+    const abstract  = abstracts[pmid] || '(Abstract not available — view on PubMed.)';
+    const isNew     = newPmids.has(pmid);
+    const isRead    = readSet.has(pmid);
+    const isUnread  = !isRead;
+    const hasNote   = !!notesMap[pmid];
+    const isPriority = isPreferredJournal(journal, journalPrefs);
+    const dupTabs   = getDuplicateTabs(pmid, tabId);
+    const { doi, pmc } = extractDOI(s);
+
+    const card = document.createElement('div');
+    card.className = 'paper-card' +
+      (isUnread  ? ' unread'      : '') +
+      (isPriority ? ' is-priority' : '') +
+      (dupTabs.length ? ' is-duplicate' : '');
+    card.dataset.pmid = pmid;
+
+    const doiHtml = doi
+      ? `<a class="doi-link" href="https://doi.org/${escHtml(doi)}" target="_blank" onclick="event.stopPropagation()">📄 Full text</a>`
+      : (pmc ? `<a class="doi-link" href="https://www.ncbi.nlm.nih.gov/pmc/articles/${escHtml(pmc)}/" target="_blank" onclick="event.stopPropagation()">📄 PMC free</a>` : '');
+
+    const dupHtml = dupTabs.length
+      ? `<span class="duplicate-badge" title="Also appears in other tabs">🔁 Also: ${escHtml(dupTabs.join(', '))}</span>`
+      : '';
+
+    card.innerHTML = `
+      <div class="card-body">
+        <div class="paper-meta">
+          ${isUnread ? '<span class="unread-dot"></span>' : ''}
+          <span class="paper-num">${String(idx + 1).padStart(2, '0')}</span>
+          ${isPriority ? '<span class="priority-star" title="Preferred journal">⭐</span>' : ''}
+          <span class="journal-tag" title="${escHtml(journal)}">${escHtml(journal)}</span>
+          <span class="pub-date">${escHtml(pubdate)}</span>
+          ${isNew ? '<span class="card-new-badge">NEW</span>' : ''}
+          <a class="pmid-badge" href="https://pubmed.ncbi.nlm.nih.gov/${pmid}/" target="_blank" onclick="event.stopPropagation()">PMID&nbsp;${escHtml(pmid)}</a>
+          ${dupHtml}
+        </div>
+        <div class="paper-title">${escHtml(title)}</div>
+        <div class="paper-authors">${escHtml(authors)}</div>
+      </div>
+      <div class="abstract-section">
+        <div class="abstract-label">Abstract</div>
+        <div class="abstract-text">${escHtml(abstract)}</div>
+        <div class="card-actions">
+          <button class="btn-read ${isRead ? 'is-read' : ''}" data-pmid="${pmid}">${isRead ? '✓ Read' : '○ Unread'}</button>
+          <button class="btn-note ${hasNote ? 'has-note' : ''}" data-pmid="${pmid}">📝 Note${hasNote ? ' ●' : ''}</button>
+          <button class="btn-ai" data-pmid="${pmid}">✨ AI Summary</button>
+          <button class="btn-save" data-pmid="${pmid}" onclick="toggleSavePaper(event, this)">🔖 Save</button>
+          <button class="btn-pdf" onclick="downloadSinglePDF(event, '${pmid}')">↓ PDF</button>
+          ${doiHtml}
+          <a class="pubmed-cta" style="margin:0" href="https://pubmed.ncbi.nlm.nih.gov/${pmid}/" target="_blank" onclick="event.stopPropagation()">↗ PubMed</a>
+        </div>
+      </div>
+      <div class="ai-summary-section" id="ai-section-${pmid}">
+        <div class="ai-summary-label">✨ AI Clinical Summary</div>
+        <div class="ai-summary-text loading"></div>
+      </div>
+      <div class="note-section" id="note-section-${pmid}">
+        <div class="note-label">📝 Your Notes</div>
+        <textarea class="note-textarea" id="note-textarea-${pmid}" placeholder="Add your thoughts, clinical relevance, or critique…">${escHtml(notesMap[pmid] || '')}</textarea>
+        <div class="note-save-indicator" id="note-indicator-${pmid}"></div>
+      </div>`;
+
+    // Read button
+    card.querySelector('.btn-read').addEventListener('click', e => {
+      e.stopPropagation();
+      toggleReadOnCard(pmid, e.currentTarget, card);
+    });
+
+    // Note button
+    card.querySelector('.btn-note').addEventListener('click', e => {
+      e.stopPropagation();
+      const section = document.getElementById(`note-section-${pmid}`);
+      toggleNoteSection(pmid, e.currentTarget, section);
+    });
+
+    // Note textarea autosave
+    const noteTA = card.querySelector(`#note-textarea-${pmid}`);
+    const noteInd = card.querySelector(`#note-indicator-${pmid}`);
+    noteTA.addEventListener('input', () => handleNoteInput(pmid, noteTA, noteInd));
+    noteTA.addEventListener('click', e => e.stopPropagation());
+
+    // AI summary button
+    card.querySelector('.btn-ai').addEventListener('click', e => {
+      e.stopPropagation();
+      const section = document.getElementById(`ai-section-${pmid}`);
+      toggleAISummary(pmid, e.currentTarget, section);
+    });
+
+    list.appendChild(card);
+  });
+
+  if (!container) { area.innerHTML = ''; }
+  area.appendChild(list);
+
+  refreshSaveButtons();
+  document.getElementById('markAllReadBtn').style.display = '';
+}
+
+// ── Load tab ──────────────────────────────────────────────────────────────────
+async function loadTab(i) {
+  currentTab = i;
+  setActiveTab(i);
+  document.getElementById('queryEditor').classList.remove('visible');
+  document.getElementById('journalPrefsEditor').classList.remove('visible');
+  document.getElementById('journalPrefsBtn').classList.remove('active');
+  clearFilters();
+  document.getElementById('filterBar').style.display = 'none';
+  document.getElementById('filterToggleBtn').classList.remove('active');
+  document.getElementById('markAllReadBtn').style.display = 'none';
+
+  const tab     = getOrderedTabs()[i];
+  const isCustom = !!savedQueries()[tab.id];
+  document.getElementById('editBtn').innerHTML =
+    `${PENCIL} Edit query${isCustom ? ' <span style="color:var(--accent);font-size:8px">●</span>' : ''}`;
+
+  const refreshBtn = document.getElementById('refreshBtn');
+  refreshBtn.classList.add('spinning');
+  setTimeout(() => refreshBtn.classList.remove('spinning'), 500);
+
+  // ── Classical tab ─────────────────────────────────────────────────────────
+  if (tab.isManual) {
+    document.getElementById('queryText').textContent = 'Manually curated landmark papers';
+    document.getElementById('resultCount').textContent = '';
+    document.getElementById('editBtn').style.display = 'none';
+    document.getElementById('journalPrefsBtn').style.display = 'none';
+    document.getElementById('tabPdfBtn').disabled = false;
+    await renderClassicalTab();
+    return;
+  }
+
+  document.getElementById('editBtn').style.display = '';
+  document.getElementById('journalPrefsBtn').style.display = '';
+  const query = getQuery(i);
+  document.getElementById('queryText').textContent = query;
+
+  const area = document.getElementById('paperArea');
+
+  try {
+    area.innerHTML = `<div class="status-msg"><div class="spinner"></div><p>Searching PubMed…</p></div>`;
+    const ids = await searchPubMed(query);
+
+    // Key Papers section
+    const kpContainer = document.createElement('div');
+    kpContainer.className = 'key-papers-section';
+    kpContainer.id = `key-papers-${tab.id}`;
+
+    if (!ids.length) {
+      document.getElementById('resultCount').textContent = '';
+      area.innerHTML = '';
+      await renderKeyPapersSection(tab.id, kpContainer);
+      area.appendChild(kpContainer);
+      area.innerHTML += `<div class="status-msg"><span class="status-icon">📭</span><p>No papers found in the last ${DAYS} days.</p></div>`;
+      document.getElementById('tabPdfBtn').disabled = true;
+      return;
+    }
+
+    document.getElementById('resultCount').textContent = `${ids.length} paper${ids.length !== 1 ? 's' : ''}`;
+    area.innerHTML = `<div class="status-msg"><div class="spinner"></div><p>Fetching ${ids.length} papers &amp; abstracts…</p></div>`;
+
+    // Register this tab's PMIDs for duplicate detection
+    registerTabPmids(tab.id, ids);
+
+    // Compute new-since-last-visit
+    const newPmidsList = computeNewPmids(tab.id, ids);
+    const newPmids = new Set(newPmidsList);
+
+    // Fetch everything in parallel
+    const [summaries, abstractsMap, readSet, notesMap] = await Promise.all([
+      fetchSummaries(ids),
+      batchFetchAbstracts(ids),
+      getReadSet(),
+      getNotesBatch(ids),
+    ]);
+
+    // Update seen snapshot AFTER computing new
+    setSeenPmids(tab.id, new Set(ids));
+
+    // Update tab badge for new papers
+    updateTabNewBadge(tab.id, newPmidsList.length);
+
+    // Update tab unread badge
+    const unreadCount = ids.filter(id => !readSet.has(id)).length;
+    updateTabUnreadBadgeSync(tab.id, unreadCount);
+
+    // Journal prefs for this tab
+    const journalPrefs = getJournalPrefs(tab.id);
+
+    area.innerHTML = '';
+    await renderKeyPapersSection(tab.id, kpContainer);
+    area.appendChild(kpContainer);
+
+    // Live results divider
+    const divider = document.createElement('div');
+    divider.className = 'live-results-divider';
+    divider.innerHTML = newPmidsList.length
+      ? `<span>🔴 Live Results · Last ${DAYS} days · <span style="color:#5dd89a">+${newPmidsList.length} new since last visit</span></span>`
+      : `<span>🔴 Live PubMed Results · Last ${DAYS} days</span>`;
+    area.appendChild(divider);
+
+    await renderPapers(summaries, abstractsMap, area, { newPmids, readSet, notesMap, journalPrefs, tabId: tab.id });
+
+  } catch (err) {
+    document.getElementById('resultCount').textContent = '';
+    area.innerHTML = `<div class="status-msg"><span class="status-icon">⚠️</span><strong>Could not fetch papers</strong><p>Unable to connect to PubMed. Check your connection and try refreshing.<br><span style="opacity:0.45;font-size:10px">${escHtml(err.message)}</span></p></div>`;
+  }
+}
+
+function updateTabNewBadge(tabId, newCount) {
+  const btn = document.querySelector(`.tab-btn[data-tab-id="${tabId}"]`);
+  if (!btn) return;
+  btn.querySelectorAll('.tab-new-badge').forEach(b => b.remove());
+  if (newCount > 0) {
+    const badge = document.createElement('span');
+    badge.className = 'tab-new-badge';
+    badge.textContent = `+${newCount}`;
+    btn.insertBefore(badge, btn.querySelector('.tab-drag-grip'));
+  }
+}
+
+function updateTabUnreadBadgeSync(tabId, unreadCount) {
+  const btn = document.querySelector(`.tab-btn[data-tab-id="${tabId}"]`);
+  if (!btn) return;
+  btn.querySelectorAll('.tab-unread-badge').forEach(b => b.remove());
+  if (unreadCount > 0) {
+    const badge = document.createElement('span');
+    badge.className = 'tab-unread-badge';
+    badge.textContent = unreadCount;
+    btn.insertBefore(badge, btn.querySelector('.tab-drag-grip'));
+  }
+}
+
+// ── IndexedDB ─────────────────────────────────────────────────────────────────
+const DB_NAME  = 'digest-saved-papers';
+const DB_STORE  = 'papers';
+const DB_PINNED = 'pinned_papers';
+const DB_NOTES  = 'notes';
+const DB_READ   = 'read_papers';
+let _db = null;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    if (_db) return resolve(_db);
+    const req = indexedDB.open(DB_NAME, 3);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(DB_STORE)) {
+        const s = d.createObjectStore(DB_STORE, { keyPath: 'pmid' });
+        s.createIndex('tabId',   'tabId',   { unique: false });
+        s.createIndex('savedAt', 'savedAt', { unique: false });
+      }
+      if (!d.objectStoreNames.contains(DB_PINNED)) {
+        const ps = d.createObjectStore(DB_PINNED, { keyPath: 'id' });
+        ps.createIndex('tabId',   'tabId',   { unique: false });
+        ps.createIndex('pinnedAt','pinnedAt',{ unique: false });
+      }
+      if (!d.objectStoreNames.contains(DB_NOTES)) {
+        d.createObjectStore(DB_NOTES, { keyPath: 'pmid' });
+      }
+      if (!d.objectStoreNames.contains(DB_READ)) {
+        d.createObjectStore(DB_READ, { keyPath: 'pmid' });
+      }
+    };
+    req.onsuccess  = e => { _db = e.target.result; resolve(_db); };
+    req.onerror    = e => reject(e.target.error);
+  });
+}
+
+async function dbPut(paper) {
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).put(paper);
+    tx.oncomplete = res; tx.onerror = e => rej(e.target.error);
+  });
+}
+
+async function dbDelete(pmid) {
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).delete(pmid);
+    tx.oncomplete = res; tx.onerror = e => rej(e.target.error);
+  });
+}
+
+async function dbGetAll() {
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const req = d.transaction(DB_STORE, 'readonly').objectStore(DB_STORE).getAll();
+    req.onsuccess = () => res(req.result);
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+async function dbHas(pmid) {
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const req = d.transaction(DB_STORE, 'readonly').objectStore(DB_STORE).get(pmid);
+    req.onsuccess = () => res(!!req.result);
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+// ── Save / unsave paper ───────────────────────────────────────────────────────
+async function toggleSavePaper(e, btn) {
+  e.stopPropagation();
+  const pmid   = btn.dataset.pmid;
+  const isSaved = await dbHas(pmid);
+  if (isSaved) {
+    await dbDelete(pmid);
+    btn.classList.remove('saved');
+    btn.textContent = '🔖 Save paper';
+  } else {
+    const paper = currentTabPapers.find(p => p.pmid === pmid);
+    if (paper) {
+      await dbPut({ ...paper, savedAt: Date.now() });
+      btn.classList.add('saved');
+      btn.textContent = '✓ Saved';
+    }
+  }
+  await updateSavedCount();
+}
+
+async function refreshSaveButtons() {
+  const all = await dbGetAll();
+  const saved = new Set(all.map(p => p.pmid));
+  document.querySelectorAll('.btn-save').forEach(btn => {
+    if (saved.has(btn.dataset.pmid)) {
+      btn.classList.add('saved');
+      btn.textContent = '✓ Saved';
+    } else {
+      btn.classList.remove('saved');
+      btn.textContent = '🔖 Save paper';
+    }
+  });
+  updateSavedCount(all.length);
+}
+
+async function updateSavedCount(count) {
+  if (count === undefined) {
+    const all = await dbGetAll();
+    count = all.length;
+  }
+  const btn = document.getElementById('sidebarSavedBtn');
+  if (btn) btn.innerHTML = `📚 Saved Papers <span class="saved-count-badge" id="savedCountBadge">${count}</span>`;
+}
+
+// ── Saved Papers panel ────────────────────────────────────────────────────────
+async function openSavedPanel() {
+  document.getElementById('savedPanel').classList.add('visible');
+  await renderSavedPanel();
+}
+
+function closeSavedPanel() {
+  document.getElementById('savedPanel').classList.remove('visible');
+}
+
+async function renderSavedPanel() {
+  const papers = await dbGetAll();
+  papers.sort((a, b) => b.savedAt - a.savedAt);
+
+  document.getElementById('savedPanelSub').textContent =
+    `${papers.length} paper${papers.length !== 1 ? 's' : ''} saved locally in your browser`;
+  document.getElementById('downloadAllSavedBtn').disabled = papers.length === 0;
+  updateSavedCount(papers.length);
+
+  const list = document.getElementById('savedPanelList');
+  if (!papers.length) {
+    list.innerHTML = `<div class="saved-empty">No saved papers yet.<br>Click 🔖 Save paper on any article.</div>`;
+    return;
+  }
+
+  // Group by tab label
+  const groups = {};
+  papers.forEach(p => {
+    const key = p.tabLabel || 'Other';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(p);
+  });
+
+  list.innerHTML = '';
+  Object.entries(groups).forEach(([label, items]) => {
+    const gl = document.createElement('div');
+    gl.className = 'saved-group-label';
+    gl.textContent = label;
+    list.appendChild(gl);
+
+    items.forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'saved-paper-item';
+      el.id = `saved-item-${p.pmid}`;
+      el.innerHTML = `
+        <div class="saved-paper-meta">
+          <span class="journal-tag" style="font-size:9px">${escHtml(p.journal)}</span>
+          <span class="pub-date" style="font-size:9.5px">${escHtml(p.pubdate)}</span>
+          <a class="pmid-badge" href="https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/" target="_blank">PMID ${escHtml(p.pmid)}</a>
+        </div>
+        <div class="saved-paper-title">${escHtml(p.title)}</div>
+        <div class="saved-paper-authors">${escHtml(p.authors)}</div>
+        <div class="saved-paper-actions">
+          <button class="btn-sm-pdf" onclick="downloadSinglePDFDirect('${p.pmid}')">↓ PDF</button>
+          <a class="btn-sm-pubmed" href="https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/" target="_blank">↗ PubMed</a>
+          <button class="btn-sm-remove" onclick="removeSavedPaper('${p.pmid}')">✕ Remove</button>
+        </div>`;
+      list.appendChild(el);
+    });
+  });
+}
+
+async function removeSavedPaper(pmid) {
+  await dbDelete(pmid);
+  // Remove from panel
+  const el = document.getElementById(`saved-item-${pmid}`);
+  if (el) el.remove();
+  // Update save button on main list if visible
+  const btn = document.querySelector(`.btn-save[data-pmid="${pmid}"]`);
+  if (btn) { btn.classList.remove('saved'); btn.textContent = '🔖 Save paper'; }
+  await renderSavedPanel();
+}
+
+async function clearAllSaved() {
+  if (!confirm('Remove all saved papers?')) return;
+  const all = await dbGetAll();
+  await Promise.all(all.map(p => dbDelete(p.pmid)));
+  await renderSavedPanel();
+  refreshSaveButtons();
+}
+
+// ── PDF generation (jsPDF) ────────────────────────────────────────────────────
+function buildPDF(papers, title) {
+  const { jsPDF } = window.jspdf;
+  const doc  = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W    = 210, H = 297;
+  const ml   = 16, mr = 16, mt = 18, mb = 18;
+  const cw   = W - ml - mr;
+  let y      = mt;
+
+  const checkPage = (needed = 10) => {
+    if (y + needed > H - mb) { doc.addPage(); y = mt; }
+  };
+
+  const write = (text, size, bold, color, maxWidth, lineH) => {
+    doc.setFontSize(size);
+    doc.setFont('helvetica', bold ? 'bold' : 'normal');
+    doc.setTextColor(...color);
+    const lines = doc.splitTextToSize(String(text), maxWidth || cw);
+    lines.forEach(line => {
+      checkPage(lineH);
+      doc.text(line, ml, y);
+      y += lineH;
+    });
+    return lines.length;
+  };
+
+  // Cover / header
+  doc.setFillColor(15, 19, 24);
+  doc.rect(0, 0, W, 38, 'F');
+  doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+  doc.setTextColor(220, 230, 245);
+  doc.text(title, ml, 20);
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+  doc.setTextColor(92, 111, 136);
+  doc.text(`Generated ${new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' })}  ·  ${papers.length} paper${papers.length !== 1 ? 's' : ''}  ·  PubMed / NCBI E-utilities`, ml, 30);
+  y = 48;
+
+  papers.forEach((p, i) => {
+    checkPage(30);
+
+    // Paper number + journal line
+    doc.setDrawColor(37, 46, 61);
+    doc.setLineWidth(0.3);
+    doc.line(ml, y, W - mr, y);
+    y += 5;
+
+    write(`[${String(i+1).padStart(2,'0')}]  ${p.journal}`, 7.5, false, [92,111,136], cw, 4.5);
+    write(`${p.pubdate}   PMID: ${p.pmid}`, 7.5, false, [92,111,136], cw, 4.5);
+    y += 2;
+
+    write(p.title, 11, true, [220,230,245], cw, 6);
+    y += 1;
+    write(p.authors, 8, false, [120,140,165], cw, 4.5);
+    y += 3;
+
+    // Abstract
+    doc.setFontSize(7.5); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(124, 158, 245);
+    doc.text('ABSTRACT', ml, y); y += 5;
+    write(p.abstract, 8.5, false, [168, 184, 208], cw, 5);
+    y += 6;
+  });
+
+  // Page numbers
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+    doc.setTextColor(92,111,136);
+    doc.text(`${i} / ${pages}`, W - mr, H - 10, { align: 'right' });
+  }
+
+  return doc;
+}
+
+function downloadTabPDF() {
+  if (!currentTabPapers.length) return;
+  const label = getOrderedTabs()[currentTab]?.label || 'Tab';
+  const btn = document.getElementById('tabPdfBtn');
+  btn.textContent = '⏳ Generating…'; btn.disabled = true;
+  setTimeout(() => {
+    try {
+      const doc = buildPDF(currentTabPapers, `${label} — Literature Digest`);
+      doc.save(`${label.replace(/[^a-z0-9]/gi, '_')}_digest.pdf`);
+    } finally {
+      btn.textContent = '↓ Tab PDF'; btn.disabled = false;
+    }
+  }, 50);
+}
+
+async function downloadSinglePDF(e, pmid) {
+  e.stopPropagation();
+  const paper = currentTabPapers.find(p => p.pmid === pmid);
+  if (!paper) return;
+  const doc = buildPDF([paper], paper.title.slice(0, 60));
+  doc.save(`PMID_${pmid}.pdf`);
+}
+
+async function downloadSinglePDFDirect(pmid) {
+  const all   = await dbGetAll();
+  const paper = all.find(p => p.pmid === pmid);
+  if (!paper) return;
+  const doc = buildPDF([paper], paper.title.slice(0, 60));
+  doc.save(`PMID_${pmid}.pdf`);
+}
+
+async function downloadAllSavedPDF() {
+  const papers = await dbGetAll();
+  if (!papers.length) return;
+  papers.sort((a, b) => b.savedAt - a.savedAt);
+  const btn = document.getElementById('downloadAllSavedBtn');
+  btn.textContent = '⏳ Generating…'; btn.disabled = true;
+  setTimeout(() => {
+    try {
+      const doc = buildPDF(papers, 'Saved Papers — Literature Digest');
+      doc.save('saved_papers_digest.pdf');
+    } finally {
+      btn.textContent = '↓ Download all as PDF'; btn.disabled = false;
+    }
+  }, 50);
+}
+
+// ── Pinned papers DB helpers ──────────────────────────────────────────────────
+async function pinnedPut(paper) {
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(DB_PINNED, 'readwrite');
+    tx.objectStore(DB_PINNED).put(paper);
+    tx.oncomplete = res; tx.onerror = e => rej(e.target.error);
+  });
+}
+
+async function pinnedDelete(id) {
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(DB_PINNED, 'readwrite');
+    tx.objectStore(DB_PINNED).delete(id);
+    tx.oncomplete = res; tx.onerror = e => rej(e.target.error);
+  });
+}
+
+async function pinnedGetByTab(tabId) {
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const idx = d.transaction(DB_PINNED, 'readonly').objectStore(DB_PINNED).index('tabId');
+    const req = idx.getAll(IDBKeyRange.only(tabId));
+    req.onsuccess = () => res(req.result.sort((a,b) => a.pinnedAt - b.pinnedAt));
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+// ── Fetch single paper by PMID from PubMed ────────────────────────────────────
+async function fetchPaperByPMID(pmid) {
+  pmid = pmid.trim().replace(/\D/g,'');
+  if (!pmid) throw new Error('Invalid PMID');
+  const [summaries, abstracts] = await Promise.all([
+    fetchSummaries([pmid]),
+    batchFetchAbstracts([pmid]),
+  ]);
+  if (!summaries.length) throw new Error('PMID not found');
+  const s = summaries[0];
+  return {
+    pmid,
+    title:    s.title || '(No title)',
+    authors:  formatAuthors(s.authors),
+    abstract: abstracts[pmid] || '(No abstract available.)',
+    journal:  s.fulljournalname || s.source || '',
+    pubdate:  s.pubdate || '',
+  };
+}
+
+// ── Key Papers section (per regular tab) ─────────────────────────────────────
+async function renderKeyPapersSection(tabId, container) {
+  const papers = await pinnedGetByTab(tabId);
+
+  container.innerHTML = '';
+
+  const header = document.createElement('div');
+  header.className = 'key-papers-header';
+  header.innerHTML = `
+    <div class="key-papers-title">
+      <span class="key-pin">📌</span> Key Papers
+      <span class="key-count-badge" id="kp-count-${tabId}">${papers.length}</span>
+    </div>
+    <button class="key-papers-toggle" onclick="toggleKeyPapersBody('${tabId}')">
+      <span id="kp-arrow-${tabId}">▸</span> ${papers.length ? 'Show' : 'Add'}
+    </button>`;
+  container.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'key-papers-body';
+  body.id = `kp-body-${tabId}`;
+  body.style.display = 'none';
+
+  // Add-by-PMID input
+  const addRow = document.createElement('div');
+  addRow.className = 'key-add-row';
+  addRow.innerHTML = `
+    <input class="key-pmid-input" id="kp-input-${tabId}" type="text" placeholder="Enter PMID…" spellcheck="false"/>
+    <button class="btn-save" onclick="addKeyPaper('${tabId}')">+ Add</button>
+    <span class="key-add-status" id="kp-status-${tabId}"></span>`;
+  body.appendChild(addRow);
+
+  const listEl = document.createElement('div');
+  listEl.id = `kp-list-${tabId}`;
+  body.appendChild(listEl);
+  container.appendChild(body);
+
+  renderKeyPapersList(tabId, papers, listEl);
+}
+
+function renderKeyPapersList(tabId, papers, listEl) {
+  if (!listEl) listEl = document.getElementById(`kp-list-${tabId}`);
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  if (!papers.length) {
+    listEl.innerHTML = `<div class="key-empty">No key papers added yet. Enter a PMID above to add one.</div>`;
+    return;
+  }
+  papers.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'key-paper-card';
+    el.id = `kp-card-${tabId}-${p.pmid}`;
+    el.innerHTML = `
+      <div class="paper-meta" style="margin-bottom:8px">
+        <span class="journal-tag">${escHtml(p.journal)}</span>
+        <span class="pub-date">${escHtml(p.pubdate)}</span>
+        <a class="pmid-badge" href="https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/" target="_blank">PMID ${escHtml(p.pmid)}</a>
+      </div>
+      <div class="paper-title" style="font-size:15px;margin-bottom:6px">${escHtml(p.title)}</div>
+      <div class="paper-authors" style="margin-bottom:10px">${escHtml(p.authors)}</div>
+      <div class="key-abstract-label">Abstract</div>
+      <div class="abstract-text" style="font-size:13px;margin-bottom:12px">${escHtml(p.abstract)}</div>
+      <div class="card-actions">
+        <button class="btn-pdf" onclick="downloadSinglePDFFromPinned('${tabId}','${p.pmid}')">↓ PDF</button>
+        <a class="btn-sm-pubmed" href="https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/" target="_blank">↗ PubMed</a>
+        <button class="btn-sm-remove" onclick="removeKeyPaper('${tabId}','${p.pmid}')">✕ Remove</button>
+      </div>`;
+    listEl.appendChild(el);
+  });
+}
+
+function toggleKeyPapersBody(tabId) {
+  const body  = document.getElementById(`kp-body-${tabId}`);
+  const arrow = document.getElementById(`kp-arrow-${tabId}`);
+  const btn   = arrow?.parentElement;
+  if (!body) return;
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  if (arrow) arrow.textContent = open ? '▾' : '▸';
+  if (btn) btn.innerHTML = `<span id="kp-arrow-${tabId}">${open ? '▾' : '▸'}</span> ${open ? 'Hide' : 'Show'}`;
+}
+
+async function addKeyPaper(tabId) {
+  const input  = document.getElementById(`kp-input-${tabId}`);
+  const status = document.getElementById(`kp-status-${tabId}`);
+  const pmid   = input.value.trim().replace(/\D/g,'');
+  if (!pmid) { status.textContent = 'Enter a PMID'; status.style.color = 'var(--warn)'; return; }
+
+  status.textContent = 'Fetching…'; status.style.color = 'var(--muted)';
+  try {
+    const paper = await fetchPaperByPMID(pmid);
+    const tabLabel = TABS.find(t => t.id === tabId)?.label || tabId;
+    await pinnedPut({ ...paper, id: `${tabId}:${pmid}`, tabId, tabLabel, pinnedAt: Date.now() });
+    input.value = '';
+    status.textContent = '✓ Added'; status.style.color = 'var(--accent)';
+    setTimeout(() => { status.textContent = ''; }, 2500);
+
+    const papers = await pinnedGetByTab(tabId);
+    const badge  = document.getElementById(`kp-count-${tabId}`);
+    if (badge) badge.textContent = papers.length;
+    renderKeyPapersList(tabId, papers);
+  } catch(err) {
+    status.textContent = '✗ ' + err.message; status.style.color = 'var(--warn)';
+  }
+}
+
+async function removeKeyPaper(tabId, pmid) {
+  await pinnedDelete(`${tabId}:${pmid}`);
+  const el = document.getElementById(`kp-card-${tabId}-${pmid}`);
+  if (el) el.remove();
+  const papers = await pinnedGetByTab(tabId);
+  const badge  = document.getElementById(`kp-count-${tabId}`);
+  if (badge) badge.textContent = papers.length;
+  if (!papers.length) renderKeyPapersList(tabId, []);
+}
+
+async function downloadSinglePDFFromPinned(tabId, pmid) {
+  const papers = await pinnedGetByTab(tabId);
+  const p = papers.find(x => x.pmid === pmid);
+  if (!p) return;
+  buildPDF([p], p.title.slice(0,60)).save(`PMID_${pmid}.pdf`);
+}
+
+// ── Classical Papers tab ─────────────────────────────────────────────────────
+async function renderClassicalTab() {
+  document.getElementById('tabPdfBtn').disabled = false;
+  document.getElementById('resultCount').textContent = '';
+  document.getElementById('queryText').textContent = 'Manually curated classical & landmark papers';
+
+  const area = document.getElementById('paperArea');
+  area.innerHTML = '';
+
+  const papers = await pinnedGetByTab('classical');
+
+  // Build wrapper
+  const wrap = document.createElement('div');
+  wrap.className = 'classical-wrap';
+
+  // Header + add form
+  wrap.innerHTML = `
+    <div class="classical-header">
+      <div>
+        <div class="classical-title">⭐ Classical Papers</div>
+        <div class="classical-sub">Landmark &amp; reference papers — stored permanently in your browser</div>
+      </div>
+      <button class="tab-pdf-btn" onclick="downloadClassicalPDF()">↓ Export PDF</button>
+    </div>
+
+    <div class="classical-add-box">
+      <div class="classical-add-title">Add by PubMed ID</div>
+      <div class="classical-add-row">
+        <input class="key-pmid-input" id="classical-pmid-input" type="text" placeholder="Enter PMID (e.g. 12345678)…" spellcheck="false"
+          onkeydown="if(event.key==='Enter') addClassicalPaper()"/>
+        <button class="refresh-btn" style="padding:6px 18px" onclick="addClassicalPaper()">+ Fetch &amp; Add</button>
+        <span class="key-add-status" id="classical-status"></span>
+      </div>
+
+      <div class="classical-divider">or add manually</div>
+      <div class="classical-manual-grid">
+        <input class="settings-input" id="cm-title"   placeholder="Title *" style="grid-column:1/-1"/>
+        <input class="settings-input" id="cm-authors" placeholder="Authors"/>
+        <input class="settings-input" id="cm-journal" placeholder="Journal"/>
+        <input class="settings-input" id="cm-year"    placeholder="Year / Date"/>
+        <input class="settings-input" id="cm-pmid"    placeholder="PMID (optional)"/>
+        <textarea class="key-pmid-input" id="cm-abstract" rows="3" placeholder="Abstract (optional)" style="grid-column:1/-1;resize:vertical;min-height:60px"></textarea>
+      </div>
+      <div style="margin-top:10px">
+        <button class="save-btn" onclick="addClassicalManual()">Save manual entry</button>
+        <span class="key-add-status" id="classical-manual-status" style="margin-left:10px"></span>
+      </div>
+    </div>
+
+    <div id="classical-list"></div>`;
+
+  area.appendChild(wrap);
+  renderClassicalList(papers);
+}
+
+function renderClassicalList(papers) {
+  const listEl = document.getElementById('classical-list');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  if (!papers.length) {
+    listEl.innerHTML = `<div class="key-empty" style="padding:40px 0">No classical papers yet. Add your first one above.</div>`;
+    return;
+  }
+  papers.forEach((p, idx) => {
+    const el = document.createElement('div');
+    el.className = 'paper-card';
+    el.id = `classical-card-${p.pmid}`;
+    el.style.animationDelay = `${idx * 0.04}s`;
+    const pmidLink = p.pmid
+      ? `<a class="pmid-badge" href="https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/" target="_blank">PMID ${escHtml(p.pmid)}</a>`
+      : `<span class="pmid-badge" style="background:var(--gold-dim);color:var(--gold);border-color:rgba(232,185,106,0.25)">Manual entry</span>`;
+    el.innerHTML = `
+      <div class="card-body">
+        <div class="paper-meta">
+          <span class="paper-num">${String(idx+1).padStart(2,'0')}</span>
+          <span class="journal-tag">${escHtml(p.journal || '—')}</span>
+          <span class="pub-date">${escHtml(p.pubdate || '')}</span>
+          ${pmidLink}
+        </div>
+        <div class="paper-title">${escHtml(p.title)}</div>
+        <div class="paper-authors">${escHtml(p.authors || '')}</div>
+      </div>
+      <div class="abstract-section">
+        <div class="abstract-label">Abstract</div>
+        <div class="abstract-text">${escHtml(p.abstract || '(No abstract.)')}</div>
+        <div class="card-actions">
+          <button class="btn-pdf" onclick="downloadSinglePDFFromPinned('classical','${p.pmid}')">↓ PDF</button>
+          ${p.pmid ? `<a class="btn-sm-pubmed" href="https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/" target="_blank">↗ PubMed</a>` : ''}
+          <button class="btn-sm-remove" onclick="removeClassicalPaper('${p.pmid}')">✕ Remove</button>
+        </div>
+      </div>`;
+    listEl.appendChild(el);
+  });
+}
+
+async function addClassicalPaper() {
+  const input  = document.getElementById('classical-pmid-input');
+  const status = document.getElementById('classical-status');
+  const pmid   = input.value.trim().replace(/\D/g,'');
+  if (!pmid) { status.textContent = 'Enter a PMID'; status.style.color = 'var(--warn)'; return; }
+  status.textContent = 'Fetching from PubMed…'; status.style.color = 'var(--muted)';
+  try {
+    const paper = await fetchPaperByPMID(pmid);
+    await pinnedPut({ ...paper, id: `classical:${pmid}`, tabId: 'classical', tabLabel: 'Classical Papers', pinnedAt: Date.now() });
+    input.value = '';
+    status.textContent = '✓ Added'; status.style.color = 'var(--accent)';
+    setTimeout(() => { status.textContent = ''; }, 2500);
+    renderClassicalList(await pinnedGetByTab('classical'));
+  } catch(err) {
+    status.textContent = '✗ ' + err.message; status.style.color = 'var(--warn)';
+  }
+}
+
+async function addClassicalManual() {
+  const status = document.getElementById('classical-manual-status');
+  const title  = document.getElementById('cm-title').value.trim();
+  if (!title) { status.textContent = 'Title is required'; status.style.color = 'var(--warn)'; return; }
+  const pmid = document.getElementById('cm-pmid').value.trim().replace(/\D/g,'') || `manual_${Date.now()}`;
+  const paper = {
+    id: `classical:${pmid}`, tabId: 'classical', tabLabel: 'Classical Papers',
+    pmid, title,
+    authors:  document.getElementById('cm-authors').value.trim(),
+    journal:  document.getElementById('cm-journal').value.trim(),
+    pubdate:  document.getElementById('cm-year').value.trim(),
+    abstract: document.getElementById('cm-abstract').value.trim(),
+    pinnedAt: Date.now(), isManualEntry: true,
+  };
+  await pinnedPut(paper);
+  ['cm-title','cm-authors','cm-journal','cm-year','cm-pmid','cm-abstract'].forEach(id => { document.getElementById(id).value = ''; });
+  status.textContent = '✓ Saved'; status.style.color = 'var(--accent)';
+  setTimeout(() => { status.textContent = ''; }, 2500);
+  renderClassicalList(await pinnedGetByTab('classical'));
+}
+
+async function removeClassicalPaper(pmid) {
+  await pinnedDelete(`classical:${pmid}`);
+  const el = document.getElementById(`classical-card-${pmid}`);
+  if (el) el.remove();
+  renderClassicalList(await pinnedGetByTab('classical'));
+}
+
+async function downloadClassicalPDF() {
+  const papers = await pinnedGetByTab('classical');
+  if (!papers.length) return;
+  buildPDF(papers, '⭐ Classical Papers — Literature Digest').save('classical_papers.pdf');
+}
+
+// ════════════════════════════════════════════════════════════
+// FEATURES 1–8
+// ════════════════════════════════════════════════════════════
+
+// ── 1. New-since-last-visit ───────────────────────────────────────────────────
+function getSeenPmids(tabId) {
+  try { return new Set(JSON.parse(localStorage.getItem(`crc-seen-${tabId}`)) || []); } catch { return new Set(); }
+}
+function setSeenPmids(tabId, pmids) {
+  localStorage.setItem(`crc-seen-${tabId}`, JSON.stringify([...pmids]));
+}
+function computeNewPmids(tabId, currentPmids) {
+  const seen = getSeenPmids(tabId);
+  return currentPmids.filter(id => !seen.has(id));
+}
+
+// ── 2 & 3. Notes + Read tracking — DB helpers ────────────────────────────────
+async function dbGeneric(storeName, mode, op) {
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(storeName, mode);
+    const result = op(tx.objectStore(storeName));
+    if (result && result.onsuccess !== undefined) {
+      result.onsuccess = () => res(result.result);
+      result.onerror   = e => rej(e.target.error);
+    } else {
+      tx.oncomplete = () => res(true);
+      tx.onerror    = e => rej(e.target.error);
+    }
+  });
+}
+
+// Notes
+async function saveNote(pmid, text) {
+  await dbGeneric(DB_NOTES, 'readwrite', s => { s.put({ pmid, text, updatedAt: Date.now() }); });
+}
+async function getNote(pmid) {
+  const r = await dbGeneric(DB_NOTES, 'readonly', s => s.get(pmid));
+  return r?.text || '';
+}
+async function getNotesBatch(pmids) {
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(DB_NOTES, 'readonly');
+    const store = tx.objectStore(DB_NOTES);
+    const map = {};
+    let pending = pmids.length;
+    if (!pending) return res(map);
+    pmids.forEach(pmid => {
+      const req = store.get(pmid);
+      req.onsuccess = () => { if (req.result) map[pmid] = req.result.text; if (!--pending) res(map); };
+      req.onerror   = () => { if (!--pending) res(map); };
+    });
+  });
+}
+
+// Read tracking
+async function markRead(pmid) {
+  await dbGeneric(DB_READ, 'readwrite', s => { s.put({ pmid, readAt: Date.now() }); });
+}
+async function unmarkRead(pmid) {
+  await dbGeneric(DB_READ, 'readwrite', s => { s.delete(pmid); });
+}
+async function getReadSet() {
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const req = d.transaction(DB_READ, 'readonly').objectStore(DB_READ).getAllKeys();
+    req.onsuccess = () => res(new Set(req.result.map(String)));
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+// ── 3. Mark all read in current tab ──────────────────────────────────────────
+async function markAllReadInTab() {
+  const cards = document.querySelectorAll('.paper-card[data-pmid]');
+  for (const card of cards) {
+    const pmid = card.dataset.pmid;
+    await markRead(pmid);
+    card.classList.remove('unread');
+    const btn = card.querySelector('.btn-read');
+    if (btn) { btn.classList.add('is-read'); btn.textContent = '✓ Read'; }
+    const dot = card.querySelector('.unread-dot');
+    if (dot) dot.remove();
+  }
+  await updateTabUnreadBadge(getOrderedTabs()[currentTab]?.id);
+}
+
+async function toggleReadOnCard(pmid, btn, card) {
+  const tabId = getOrderedTabs()[currentTab]?.id;
+  if (card.classList.contains('unread')) {
+    await markRead(pmid);
+    card.classList.remove('unread');
+    btn.classList.add('is-read');
+    btn.textContent = '✓ Read';
+    const dot = card.querySelector('.unread-dot');
+    if (dot) dot.remove();
+  } else {
+    await unmarkRead(pmid);
+    card.classList.add('unread');
+    btn.classList.remove('is-read');
+    btn.textContent = '○ Unread';
+    // re-add dot
+    const meta = card.querySelector('.paper-meta');
+    if (meta && !meta.querySelector('.unread-dot')) {
+      const dot = document.createElement('span');
+      dot.className = 'unread-dot';
+      meta.insertBefore(dot, meta.firstChild);
+    }
+  }
+  await updateTabUnreadBadge(tabId);
+  applyFilters();
+}
+
+async function updateTabUnreadBadge(tabId) {
+  if (!tabId) return;
+  const readSet = await getReadSet();
+  const tabBtn  = document.querySelector(`.tab-btn[data-tab-id="${tabId}"]`);
+  if (!tabBtn) return;
+  const cached = tabPmidCache[tabId];
+  if (!cached) return;
+  const unread = [...cached].filter(id => !readSet.has(id)).length;
+  let badge = tabBtn.querySelector('.tab-unread-badge');
+  if (unread > 0) {
+    if (!badge) { badge = document.createElement('span'); badge.className = 'tab-unread-badge'; tabBtn.insertBefore(badge, tabBtn.querySelector('.tab-drag-grip')); }
+    badge.textContent = unread;
+  } else if (badge) {
+    badge.remove();
+  }
+}
+
+// ── 4. Filter bar ─────────────────────────────────────────────────────────────
+let activeFilters = { keyword: '', journal: '', unreadOnly: false, priorityOnly: false };
+
+function toggleFilterBar() {
+  const bar = document.getElementById('filterBar');
+  const btn = document.getElementById('filterToggleBtn');
+  const open = bar.style.display === 'none';
+  bar.style.display = open ? 'flex' : 'none';
+  btn.classList.toggle('active', open);
+}
+
+function toggleFilterUnread() {
+  activeFilters.unreadOnly = !activeFilters.unreadOnly;
+  document.getElementById('filterUnreadBtn').classList.toggle('active', activeFilters.unreadOnly);
+  applyFilters();
+}
+function toggleFilterPriority() {
+  activeFilters.priorityOnly = !activeFilters.priorityOnly;
+  document.getElementById('filterPriorityBtn').classList.toggle('active', activeFilters.priorityOnly);
+  applyFilters();
+}
+
+function applyFilters() {
+  const kw      = (document.getElementById('filterKeyword')?.value || '').toLowerCase();
+  const journal = (document.getElementById('filterJournal')?.value || '').toLowerCase();
+  activeFilters.keyword = kw;
+  activeFilters.journal = journal;
+
+  const cards   = document.querySelectorAll('.paper-card[data-pmid]');
+  let shown = 0, total = cards.length;
+
+  cards.forEach(card => {
+    const titleEl    = card.querySelector('.paper-title');
+    const abstractEl = card.querySelector('.abstract-text');
+    const journalEl  = card.querySelector('.journal-tag');
+    const title    = (titleEl?.textContent || '').toLowerCase();
+    const abstract = (abstractEl?.textContent || '').toLowerCase();
+    const jText    = (journalEl?.textContent || '').toLowerCase();
+    const isUnread = card.classList.contains('unread');
+    const isPriority = card.classList.contains('is-priority');
+
+    let visible = true;
+    if (kw      && !title.includes(kw) && !abstract.includes(kw)) visible = false;
+    if (journal && !jText.includes(journal)) visible = false;
+    if (activeFilters.unreadOnly  && !isUnread)   visible = false;
+    if (activeFilters.priorityOnly && !isPriority) visible = false;
+
+    card.style.display = visible ? '' : 'none';
+    if (visible) shown++;
+  });
+
+  const countEl = document.getElementById('filterCount');
+  if (countEl) {
+    const hasFilter = kw || journal || activeFilters.unreadOnly || activeFilters.priorityOnly;
+    countEl.textContent = hasFilter ? `${shown} of ${total} papers` : '';
+  }
+}
+
+function clearFilters() {
+  activeFilters = { keyword: '', journal: '', unreadOnly: false, priorityOnly: false };
+  const ki = document.getElementById('filterKeyword');
+  const js = document.getElementById('filterJournal');
+  if (ki) ki.value = '';
+  if (js) js.value = '';
+  document.getElementById('filterUnreadBtn')?.classList.remove('active');
+  document.getElementById('filterPriorityBtn')?.classList.remove('active');
+  document.querySelectorAll('.paper-card[data-pmid]').forEach(c => { c.style.display = ''; });
+  const countEl = document.getElementById('filterCount');
+  if (countEl) countEl.textContent = '';
+}
+
+function populateJournalFilter(summaries) {
+  const sel = document.getElementById('filterJournal');
+  if (!sel) return;
+  const journals = [...new Set(summaries.map(s => s.fulljournalname || s.source || '').filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All journals</option>' +
+    journals.map(j => `<option value="${escHtml(j.toLowerCase())}">${escHtml(j)}</option>`).join('');
+}
+
+// ── 5. AI plain-language summary ─────────────────────────────────────────────
+const aiSummaryCache = {};
+
+async function toggleAISummary(pmid, btn, section) {
+  if (section.classList.contains('open')) {
+    section.classList.remove('open');
+    btn.textContent = '✨ AI Summary';
+    return;
+  }
+  section.classList.add('open');
+  btn.textContent = '✨ Summarising…';
+  btn.disabled = true;
+
+  const textEl = section.querySelector('.ai-summary-text');
+  textEl.textContent = 'Generating clinical summary…';
+  textEl.classList.add('loading');
+
+  try {
+    if (aiSummaryCache[pmid]) {
+      textEl.textContent = aiSummaryCache[pmid];
+      textEl.classList.remove('loading');
+      btn.textContent = '✨ AI Summary';
+      btn.disabled = false;
+      return;
+    }
+    const abstract = currentTabPapers.find(p => p.pmid === pmid)?.abstract || '';
+    const title    = currentTabPapers.find(p => p.pmid === pmid)?.title || '';
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `You are a concise clinical oncology research assistant. Given the following paper title and abstract, write exactly 3 clear, plain-English sentences summarising: (1) what the study did and found, (2) the key clinical significance or implication, (3) any important limitations or caveats. Be direct and specific. Do not use bullet points. Output only the 3-sentence summary, nothing else.\n\nTitle: ${title}\n\nAbstract: ${abstract}`,
+        }],
+      }),
+    });
+    const data = await response.json();
+    const summary = data.content?.[0]?.text || 'Summary unavailable.';
+    aiSummaryCache[pmid] = summary;
+    textEl.textContent = summary;
+    textEl.classList.remove('loading');
+  } catch {
+    textEl.textContent = 'Could not generate summary — check your connection.';
+    textEl.classList.remove('loading');
+  }
+  btn.textContent = '✨ AI Summary';
+  btn.disabled = false;
+}
+
+// ── 6. DOI extraction from PubMed summary ────────────────────────────────────
+function extractDOI(summary) {
+  const ids = summary?.articleids || [];
+  const doi = ids.find(a => a.idtype === 'doi')?.value || '';
+  const pmc = ids.find(a => a.idtype === 'pmc')?.value || '';
+  return { doi, pmc };
+}
+
+// ── 7. Cross-tab duplicate detection ─────────────────────────────────────────
+const tabPmidCache = {};
+
+function registerTabPmids(tabId, pmids) {
+  tabPmidCache[tabId] = new Set(pmids);
+}
+
+function getDuplicateTabs(pmid, currentTabId) {
+  const tabs = [];
+  for (const [tabId, pmidSet] of Object.entries(tabPmidCache)) {
+    if (tabId !== currentTabId && pmidSet.has(pmid)) {
+      const tab = TABS.find(t => t.id === tabId);
+      if (tab) tabs.push(tab.label);
+    }
+  }
+  return tabs;
+}
+
+// ── 8. Journal allow-list (preferred journals) ────────────────────────────────
+function getJournalPrefs(tabId) {
+  try {
+    const raw = localStorage.getItem(`crc-jprefs-${tabId}`) || '';
+    return raw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  } catch { return []; }
+}
+
+function isPreferredJournal(journal, prefs) {
+  if (!prefs.length) return false;
+  const j = journal.toLowerCase();
+  return prefs.some(p => j.includes(p));
+}
+
+function toggleJournalPrefs() {
+  const editor = document.getElementById('journalPrefsEditor');
+  const btn    = document.getElementById('journalPrefsBtn');
+  const isOpen = editor.classList.toggle('visible');
+  btn.classList.toggle('active', isOpen);
+  if (isOpen) {
+    const tabId = getOrderedTabs()[currentTab]?.id;
+    const raw   = localStorage.getItem(`crc-jprefs-${tabId}`) || '';
+    document.getElementById('journalPrefsInput').value = raw;
+  }
+}
+
+function saveJournalPrefs() {
+  const tabId = getOrderedTabs()[currentTab]?.id;
+  const val   = document.getElementById('journalPrefsInput').value.trim();
+  if (val) localStorage.setItem(`crc-jprefs-${tabId}`, val);
+  else localStorage.removeItem(`crc-jprefs-${tabId}`);
+  document.getElementById('journalPrefsEditor').classList.remove('visible');
+  document.getElementById('journalPrefsBtn').classList.remove('active');
+  loadTab(currentTab); // re-render with new prefs
+}
+
+function clearJournalPrefs() {
+  const tabId = getOrderedTabs()[currentTab]?.id;
+  localStorage.removeItem(`crc-jprefs-${tabId}`);
+  document.getElementById('journalPrefsInput').value = '';
+}
+
+// ── Notes UI ──────────────────────────────────────────────────────────────────
+let noteSaveTimers = {};
+
+function toggleNoteSection(pmid, btn, section) {
+  const isOpen = section.classList.toggle('open');
+  btn.classList.toggle('has-note', isOpen || btn.classList.contains('has-note'));
+}
+
+function handleNoteInput(pmid, textarea, indicator) {
+  clearTimeout(noteSaveTimers[pmid]);
+  indicator.textContent = 'Saving…';
+  noteSaveTimers[pmid] = setTimeout(async () => {
+    await saveNote(pmid, textarea.value);
+    indicator.textContent = '✓ Saved';
+    // Update btn indicator
+    const btn = document.querySelector(`.btn-note[data-pmid="${pmid}"]`);
+    if (btn) btn.classList.toggle('has-note', !!textarea.value.trim());
+    setTimeout(() => { indicator.textContent = ''; }, 1500);
+  }, 800);
+}
+
+// ── Escape HTML ───────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+buildTabs();
+updateKeyIndicator();
+loadTab(0);
+</script>
+</body>
+</html>
