@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     :root {
       --bg:           #0f1318;
@@ -29,6 +30,7 @@
       --tag-text:     #7c9ef5;
       --warn:         #f0a060;
       --sidebar-w:    220px;
+      --header-h:     75px;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -188,8 +190,8 @@
       background: var(--bg2);
       border-right: 1px solid var(--border);
       position: sticky;
-      top: 75px;
-      height: calc(100vh - 75px);
+      top: var(--header-h);
+      height: calc(100vh - var(--header-h));
       overflow-y: auto;
       scrollbar-width: thin;
       scrollbar-color: var(--border2) transparent;
@@ -281,7 +283,7 @@
       gap: 10px;
       flex-wrap: wrap;
       position: sticky;
-      top: 75px;
+      top: var(--header-h);
       z-index: 100;
     }
 
@@ -423,8 +425,8 @@
 
     /* ── Papers ── */
     #paperArea {
-      padding: 28px 32px 60px;
-      max-width: 840px;
+      padding: 24px 32px 60px;
+      max-width: 860px;
     }
 
     .status-msg {
@@ -465,43 +467,66 @@
       line-height: 1;
     }
 
-    /* ── Paper list ── */
-    .paper-list { display: flex; flex-direction: column; gap: 12px; }
+    .paper-list { display: flex; flex-direction: column; gap: 6px; }
 
     .paper-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
       animation: fadeUp 0.3s ease both;
+      position: relative;
     }
+
+    /* Left accent stripe */
+    .paper-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--border2);
+      transition: background 0.15s;
+      border-radius: 10px 0 0 10px;
+    }
+    .paper-card:hover::before         { background: var(--accent2); }
+    .paper-card.open::before          { background: var(--accent); }
+    .paper-card.is-priority::before   { background: var(--gold); }
+    .paper-card.unread::before        { background: rgba(124,158,245,0.55); }
+    .paper-card.unread.open::before   { background: var(--accent); }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(10px); }
+      from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-
-    .paper-card:nth-child(n)   { animation-delay: calc(var(--i, 0) * 0.04s); }
-    .paper-card:nth-child(1)   { animation-delay: 0.03s; }
-    .paper-card:nth-child(2)   { animation-delay: 0.06s; }
-    .paper-card:nth-child(3)   { animation-delay: 0.09s; }
-    .paper-card:nth-child(4)   { animation-delay: 0.12s; }
-    .paper-card:nth-child(5)   { animation-delay: 0.15s; }
+    .paper-card:nth-child(1) { animation-delay: 0.03s; }
+    .paper-card:nth-child(2) { animation-delay: 0.06s; }
+    .paper-card:nth-child(3) { animation-delay: 0.09s; }
+    .paper-card:nth-child(4) { animation-delay: 0.12s; }
+    .paper-card:nth-child(5) { animation-delay: 0.15s; }
 
     .paper-card:hover {
+      background: var(--surface2);
       border-color: var(--border2);
-      box-shadow: 0 4px 24px rgba(0,0,0,0.22);
+    }
+    .paper-card.open {
+      background: var(--surface2);
+      border-color: var(--border2);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
     }
 
-    .card-body { padding: 18px 22px 16px; }
+    .card-body {
+      padding: 14px 22px 13px 22px;
+      cursor: pointer;
+      user-select: none;
+    }
 
     .paper-meta {
       display: flex;
       align-items: center;
       gap: 7px;
       flex-wrap: wrap;
-      margin-bottom: 12px;
+      margin-bottom: 9px;
     }
 
     .paper-num {
@@ -512,6 +537,8 @@
       border: 1px solid var(--border);
       border-radius: 4px;
       padding: 1px 6px;
+      min-width: 28px;
+      text-align: center;
     }
 
     .journal-tag {
@@ -522,7 +549,7 @@
       padding: 2px 8px;
       border-radius: 4px;
       font-weight: 500;
-      max-width: 260px;
+      max-width: 240px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -552,26 +579,63 @@
       border-color: rgba(232,185,106,0.5);
     }
 
+    .paper-title-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
     .paper-title {
+      flex: 1;
       font-family: 'Playfair Display', serif;
-      font-size: 16px;
+      font-size: 15.5px;
       font-weight: 400;
       line-height: 1.42;
       color: var(--text);
-      margin-bottom: 9px;
+      margin-bottom: 6px;
+      transition: color 0.15s;
+    }
+    .paper-card:hover .paper-title,
+    .paper-card.open  .paper-title { color: #eef3fd; }
+
+    .expand-chevron {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      transition: transform 0.22s ease, color 0.15s;
+      margin-top: 2px;
+      font-size: 10px;
+    }
+    .paper-card.open .expand-chevron {
+      transform: rotate(90deg);
+      color: var(--accent);
     }
 
     .paper-authors {
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--muted);
-      line-height: 1.6;
+      line-height: 1.5;
     }
 
-    /* ── Abstract — always visible ── */
+    /* ── Abstract — hidden by default, shown when card is .open ── */
     .abstract-section {
-      background: linear-gradient(180deg, rgba(124,158,245,0.03) 0%, transparent 100%);
+      display: none;
+      background: linear-gradient(180deg, rgba(124,158,245,0.04) 0%, transparent 100%);
       border-top: 1px solid var(--border);
-      padding: 16px 22px 20px;
+      padding: 16px 22px 18px;
+    }
+    .paper-card.open .abstract-section {
+      display: block;
+      animation: slideDown 0.22s ease;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     .abstract-label {
@@ -835,7 +899,6 @@
       cursor: pointer;
       text-align: left;
       transition: background 0.15s, color 0.15s;
-      margin-top: auto;
       border-top: 1px solid var(--border);
     }
     .sidebar-saved-btn:hover {
@@ -1298,9 +1361,6 @@
     }
 
     /* ── 3. Read / Unread ── */
-    .paper-card.unread {
-      border-left: 3px solid rgba(124,158,245,0.5);
-    }
     .paper-card.unread .paper-title { color: #eef3fd; }
 
     .unread-dot {
@@ -1576,13 +1636,6 @@
       line-height: 1;
     }
 
-    .paper-card.is-priority {
-      border-left: 3px solid rgba(232,185,106,0.6);
-    }
-    .paper-card.is-priority.unread {
-      border-left: 3px solid var(--gold);
-    }
-
     /* ── Journal prefs editor ── */
     .journal-prefs-editor {
       display: none;
@@ -1599,8 +1652,340 @@
       margin-bottom: 10px;
     }
 
-    /* ── Footer ── */
-    footer {
+    /* ── Notes Hub panel toolbar ── */
+    .notes-panel-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .note-hub-item {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      transition: border-color 0.15s;
+    }
+    .note-hub-item:hover { border-color: var(--border2); }
+
+    .note-hub-paper-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.4;
+      margin-bottom: 5px;
+    }
+
+    .note-hub-meta {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .note-hub-text {
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: var(--text2);
+      white-space: pre-wrap;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 10px 13px;
+      margin-bottom: 10px;
+    }
+
+    .note-hub-actions {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    /* ── PDF upload button on paper card ── */
+    .btn-pdf-upload {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 5px 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid rgba(96,165,250,0.3);
+      background: rgba(96,165,250,0.07);
+      color: #60a5fa;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-pdf-upload:hover { background: rgba(96,165,250,0.14); border-color: rgba(96,165,250,0.5); }
+    .btn-pdf-upload.has-pdf { background: rgba(96,165,250,0.14); border-color: rgba(96,165,250,0.4); }
+
+    /* ── PDF Viewer Modal ── */
+    .pdf-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: #0a0d12;
+      flex-direction: column;
+    }
+    .pdf-modal.open { display: flex; }
+
+    .pdf-modal-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 18px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border2);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      min-height: 52px;
+    }
+
+    .pdf-back-btn {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .pdf-back-btn:hover { color: var(--text); border-color: var(--accent); }
+
+    .pdf-modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 13px;
+      color: var(--text2);
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .pdf-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .pdf-tool-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      height: 30px;
+      padding: 0 8px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      color: var(--text2);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .pdf-tool-btn:hover { background: var(--surface2); color: var(--text); }
+    .pdf-tool-btn.active { background: var(--accent-dim); border-color: rgba(124,158,245,0.5); color: var(--accent); }
+
+    .pdf-tool-sep {
+      width: 1px;
+      height: 22px;
+      background: var(--border2);
+      margin: 0 3px;
+    }
+
+    .pdf-page-info {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text2);
+      white-space: nowrap;
+    }
+
+    .pdf-page-num-input {
+      width: 42px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 3px 6px;
+      border-radius: 5px;
+      text-align: center;
+      outline: none;
+    }
+
+    .pdf-nav-btn {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      font-size: 16px;
+      line-height: 1;
+      padding: 2px 9px 4px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .pdf-nav-btn:hover { color: var(--text); background: var(--surface2); }
+
+    .pdf-modal-body {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 20px 40px;
+      gap: 18px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border2) transparent;
+    }
+
+    .pdf-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 80px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    /* Each rendered PDF page */
+    .pdf-page-wrap {
+      position: relative;
+      box-shadow: 0 6px 32px rgba(0,0,0,0.6);
+      border-radius: 3px;
+      overflow: visible;
+      background: #fff;
+      flex-shrink: 0;
+    }
+
+    .pdf-page-wrap canvas { display: block; border-radius: 3px; }
+
+    /* Annotation overlay sits exactly over the canvas */
+    .pdf-annot-layer {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      border-radius: 3px;
+      pointer-events: none; /* enabled per tool */
+    }
+    .pdf-annot-layer.tool-highlight,
+    .pdf-annot-layer.tool-underline,
+    .pdf-annot-layer.tool-comment { pointer-events: all; cursor: crosshair; }
+    .pdf-annot-layer.tool-cursor  { pointer-events: none; }
+
+    /* Stored annotation marks */
+    .annot-mark {
+      position: absolute;
+      pointer-events: all;
+      cursor: pointer;
+    }
+    .annot-mark.highlight {
+      opacity: 0.38;
+      border-radius: 2px;
+      mix-blend-mode: multiply;
+    }
+    .annot-mark.underline {
+      height: 2px !important;
+      opacity: 0.85;
+      border-radius: 1px;
+    }
+    .annot-mark.comment-pin {
+      width: 22px !important;
+      height: 22px !important;
+      background: none !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
+      opacity: 0.9;
+    }
+
+    /* Comment bubble popup */
+    .comment-popup {
+      position: absolute;
+      z-index: 100;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 9px;
+      padding: 11px 13px;
+      min-width: 220px;
+      max-width: 300px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+      pointer-events: all;
+    }
+    .comment-popup textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 7px 9px;
+      border-radius: 6px;
+      resize: none;
+      outline: none;
+      min-height: 72px;
+    }
+    .comment-popup-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      justify-content: flex-end;
+    }
+
+    /* Sidebar button for Notes Hub */
+    .sidebar-notes-btn {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      background: none;
+      border: none;
+      border-left: 2px solid transparent;
+      color: var(--text2);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      padding: 9px 14px 9px 16px;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, color 0.15s;
+      margin-top: auto;
+      border-top: 1px solid var(--border);
+    }
+    .sidebar-notes-btn:hover { background: rgba(232,185,106,0.08); color: var(--gold); }
+
+    .notes-count-badge {
+      margin-left: auto;
+      background: rgba(232,185,106,0.15);
+      color: var(--gold);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      font-weight: 500;
+      padding: 1px 7px;
+      border-radius: 10px;
+      min-width: 20px;
+      text-align: center;
+    }
       border-top: 1px solid var(--border);
       padding: 14px 28px;
       font-size: 10.5px;
@@ -1612,13 +1997,117 @@
     footer a { color: var(--muted); text-decoration: none; }
     footer a:hover { color: var(--accent); }
 
+    /* ── Citation copy button ── */
+    .btn-cite {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 500;
+      padding: 5px 13px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+      border: 1px solid rgba(167,139,250,0.3); background: rgba(167,139,250,0.07); color: #a78bfa;
+      transition: all 0.15s;
+    }
+    .btn-cite:hover  { background: rgba(167,139,250,0.15); border-color: rgba(167,139,250,0.5); }
+    .btn-cite.copied { background: rgba(94,234,141,0.12);  border-color: rgba(94,234,141,0.4); color: #4ade80; }
+
+    /* ── Related papers button & section ── */
+    .btn-related {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 500;
+      padding: 5px 13px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+      border: 1px solid rgba(251,191,36,0.25); background: rgba(251,191,36,0.06); color: #fbbf24;
+      transition: all 0.15s;
+    }
+    .btn-related:hover { background: rgba(251,191,36,0.14); border-color: rgba(251,191,36,0.45); }
+
+    .related-section { display: none; border-top: 1px solid var(--border); padding: 14px 22px 16px; background: rgba(251,191,36,0.025); }
+    .related-section.open { display: block; animation: slideDown 0.18s ease; }
+    .related-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #fbbf24; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 12px; opacity: 0.8; }
+    .related-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .related-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .related-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
+    .related-title { font-family: 'Playfair Display', serif; font-size: 13.5px; color: var(--text); line-height: 1.4; margin-bottom: 4px; }
+    .related-title a { color: inherit; text-decoration: none; }
+    .related-title a:hover { color: var(--accent); }
+    .related-authors { font-size: 11px; color: var(--muted); }
+
+    /* ── Follow author button ── */
+    .btn-follow {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 500;
+      padding: 5px 13px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+      border: 1px solid rgba(52,211,153,0.28); background: rgba(52,211,153,0.07); color: #34d399;
+      transition: all 0.15s;
+    }
+    .btn-follow:hover    { background: rgba(52,211,153,0.15); border-color: rgba(52,211,153,0.5); }
+    .btn-follow.active   { background: rgba(52,211,153,0.14); border-color: rgba(52,211,153,0.4); color: #4ade80; }
+
+    /* Author tab in sidebar */
+    .tab-btn.author-tab { color: #34d399; }
+    .tab-btn.author-tab:hover { color: #4ade80; }
+    .tab-btn.author-tab.active { color: #4ade80; border-left-color: #34d399; background: rgba(52,211,153,0.08); }
+    .tab-remove-btn {
+      margin-left: auto; opacity: 0; font-size: 10px; color: var(--muted);
+      transition: opacity 0.15s; padding: 0 3px; flex-shrink: 0;
+      background: none; border: none; cursor: pointer; line-height: 1;
+    }
+    .tab-btn:hover .tab-remove-btn { opacity: 1; }
+    .tab-remove-btn:hover { color: var(--warn) !important; }
+
+    /* Editable tab label */
+    .tab-label-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tab-label-input {
+      background: var(--bg); border: 1px solid var(--accent); color: var(--text);
+      font-family: 'Inter', sans-serif; font-size: 12.5px; padding: 2px 6px;
+      border-radius: 4px; outline: none; width: 120px; max-width: 160px; flex-shrink: 0;
+    }
+
+    /* ── Tab scratchpad ── */
+    .tab-scratchpad { margin: 0 0 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); overflow: hidden; }
+    .tab-scratchpad-header { display: flex; align-items: center; justify-content: space-between; padding: 9px 16px; cursor: pointer; user-select: none; transition: background 0.15s; }
+    .tab-scratchpad-header:hover { background: var(--surface2); }
+    .tab-scratchpad.open .tab-scratchpad-header { border-bottom: 1px solid var(--border); }
+    .tab-scratchpad-title { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--gold); letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.9; display: flex; align-items: center; gap: 8px; }
+    .scratchpad-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); display: none; }
+    .tab-scratchpad.has-content .scratchpad-dot { display: inline-block; }
+    .tab-scratchpad-chevron { font-size: 9px; color: var(--muted); transition: transform 0.2s; }
+    .tab-scratchpad.open .tab-scratchpad-chevron { transform: rotate(90deg); color: var(--gold); }
+    .tab-scratchpad-body { display: none; padding: 12px 14px 14px; }
+    .tab-scratchpad.open .tab-scratchpad-body { display: block; animation: slideDown 0.18s ease; }
+    .tab-scratchpad textarea { width: 100%; background: var(--bg); border: 1px solid var(--border2); color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.75; padding: 10px 13px; border-radius: 7px; resize: vertical; min-height: 100px; outline: none; transition: border-color 0.2s; }
+    .tab-scratchpad textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(232,185,106,0.08); }
+    .tab-scratchpad-status { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--muted); margin-top: 6px; min-height: 14px; text-align: right; }
+
     /* ── Mobile ── */
+    /* ══════════════════════════════════════════════════════
+       MOBILE — comprehensive ≤ 768px
+       ══════════════════════════════════════════════════════ */
     @media (max-width: 700px) {
+
+      /* ── Header ── */
+      header {
+        padding: 11px 14px 10px;
+        gap: 8px;
+        top: 0;
+      }
+      .header-icon { width: 32px; height: 32px; font-size: 16px; border-radius: 8px; }
+      .site-label  { display: none; }
+      h1           { font-size: 15px; }
+      h1 em        { display: none; }
+
+      /* Hide verbose header meta, keep only settings */
+      .header-meta { gap: 8px; }
+      .hdivider, .header-link, .live-pill { display: none; }
+      .header-meta > span:not(.live-pill) { display: none; }
+
+      /* ── Body layout — stack sidebar above content ── */
       .body-wrap { flex-direction: column; }
 
+      /* ── Sidebar → horizontal scrolling tab bar ── */
       .sidebar {
-        width: 100%; height: auto;
-        position: static;
+        width: 100%;
+        height: auto;
+        position: sticky;
+        top: var(--header-h);  /* just below header */
+        z-index: 150;
         border-right: none;
         border-bottom: 1px solid var(--border);
         flex-direction: row;
@@ -1627,24 +2116,164 @@
         overflow-y: hidden;
         scrollbar-width: none;
         gap: 0;
+        background: var(--bg2);
+        /* allow bottom buttons to sit inline */
+        align-items: stretch;
       }
       .sidebar::-webkit-scrollbar { display: none; }
       .sidebar-label { display: none; }
 
+      /* Topic tab buttons — horizontal pill style */
       .tab-btn {
         border-left: none;
-        border-bottom: 2px solid transparent;
-        padding: 12px 15px 10px;
+        border-bottom: 3px solid transparent;
+        padding: 10px 14px 8px;
         white-space: nowrap;
         flex-shrink: 0;
+        font-size: 12px;
+        gap: 5px;
       }
       .tab-btn.active {
         border-bottom-color: var(--accent);
         border-left-color: transparent;
       }
       .tab-drag-grip { display: none; }
-      .controls { top: 0; }
-      #paperArea { padding: 18px 16px 48px; }
+
+      /* Notes and Saved buttons — compact inline in tab bar */
+      .sidebar-notes-btn,
+      .sidebar-saved-btn {
+        flex-direction: row;
+        flex-shrink: 0;
+        width: auto;
+        border-top: none;
+        border-left: 1px solid var(--border);
+        border-bottom: 3px solid transparent;
+        padding: 10px 13px 8px;
+        margin-top: 0;
+        font-size: 12px;
+        white-space: nowrap;
+        gap: 5px;
+      }
+      .sidebar-notes-btn { order: 99; }
+      .sidebar-saved-btn { order: 100; }
+      .notes-count-badge,
+      .saved-count-badge { font-size: 8.5px; padding: 0px 5px; }
+
+      /* ── Controls bar ── */
+      .controls {
+        top: calc(var(--header-h) + 43px); /* header + tab bar */
+        padding: 7px 12px;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      /* Hide query text on mobile — too long */
+      .query-display { display: none; }
+
+      /* Shrink / hide less-critical controls buttons */
+      .controls-right {
+        flex-wrap: wrap;
+        gap: 5px;
+        width: 100%;
+      }
+      .filter-toggle-btn, .journal-prefs-btn,
+      .mark-read-btn, .tab-pdf-btn { font-size: 11px; padding: 4px 9px; }
+
+      /* Edit query & refresh side by side, take full row */
+      .edit-btn   { font-size: 11px; padding: 4px 9px; }
+      .refresh-btn { font-size: 11px; padding: 5px 12px; }
+
+      /* ── Query editor ── */
+      .query-editor { padding: 10px 14px; flex-direction: column; }
+      .query-editor textarea { min-width: 0; width: 100%; font-size: 11px; }
+      .editor-actions { flex-direction: row; gap: 6px; }
+
+      /* ── Journal prefs / filter bar ── */
+      .journal-prefs-editor { padding: 12px 14px 14px; }
+      .filter-bar {
+        padding: 8px 12px;
+        gap: 6px;
+      }
+      .filter-input  { min-width: 100px; font-size: 11.5px; }
+      .filter-select { max-width: 130px; font-size: 11.5px; }
+      .filter-toggle { font-size: 11px; padding: 4px 9px; }
+
+      /* ── Paper area ── */
+      #paperArea { padding: 12px 10px 60px; }
+
+      /* ── Cards ── */
+      .card-body { padding: 12px 14px 10px; }
+      .paper-meta { gap: 5px; margin-bottom: 7px; }
+      .journal-tag { max-width: 160px; font-size: 9px; }
+      .paper-title { font-size: 14px; }
+      .paper-authors { font-size: 11px; }
+      .paper-num { min-width: 22px; font-size: 9px; }
+
+      /* Abstract section */
+      .abstract-section { padding: 12px 14px 14px; }
+      .abstract-text    { font-size: 13px; line-height: 1.72; }
+
+      /* Card action buttons — wrap nicely, slightly smaller */
+      .card-actions {
+        gap: 6px;
+        margin-top: 10px;
+        padding-top: 10px;
+      }
+      .btn-save, .btn-pdf,
+      .btn-read, .btn-note, .btn-ai,
+      .btn-pdf-upload, .doi-link {
+        font-size: 11px;
+        padding: 5px 10px;
+      }
+      .pubmed-cta { font-size: 11px; padding: 5px 10px; }
+
+      /* Note / AI sections */
+      .note-section,
+      .ai-summary-section { padding: 10px 14px 12px; }
+
+      /* Key papers section */
+      .key-add-row { flex-wrap: wrap; }
+      .key-pmid-input { min-width: 0; width: 100%; }
+
+      /* ── Side panels → full width on mobile ── */
+      .settings-panel,
+      .saved-panel { width: 100%; left: 0; right: 0; }
+      /* Notes panel is #notesPanel, also .saved-panel class */
+
+      /* ── PDF Viewer modal toolbar ── */
+      .pdf-modal-header {
+        padding: 8px 10px;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .pdf-modal-title { font-size: 11px; max-width: calc(100% - 80px); }
+      .pdf-toolbar { gap: 3px; flex-wrap: wrap; width: 100%; }
+      .pdf-tool-btn { min-width: 28px; height: 26px; font-size: 11px; padding: 0 6px; }
+      .pdf-page-info { font-size: 10px; }
+      .pdf-page-num-input { width: 34px; font-size: 10px; }
+      .pdf-nav-btn { font-size: 14px; padding: 1px 7px 3px; }
+      .pdf-modal-body { padding: 12px 4px 30px; gap: 10px; }
+
+      /* Classical tab */
+      .classical-manual-grid { grid-template-columns: 1fr; }
+      .classical-add-box { padding: 14px; }
+
+      /* Saved-panel inner items */
+      .saved-panel-inner { padding: 16px; }
+      .saved-paper-actions { flex-wrap: wrap; gap: 5px; }
+
+      /* Live results divider */
+      .live-results-divider { font-size: 9px; margin: 4px 0 12px; }
+    }
+
+    /* ── Extra-small phones ── */
+    @media (max-width: 400px) {
+      h1 { font-size: 13.5px; }
+      .tab-btn { padding: 9px 11px 7px; font-size: 11.5px; }
+      .paper-title { font-size: 13.5px; }
+      .abstract-text { font-size: 12.5px; }
+      .btn-save, .btn-pdf, .btn-read, .btn-note,
+      .btn-ai, .btn-pdf-upload { font-size: 10.5px; padding: 4px 8px; }
     }
   </style>
 </head>
@@ -1664,7 +2293,7 @@
       <span class="hdivider"></span>
       <a class="header-link" href="https://pubmed.ncbi.nlm.nih.gov" target="_blank">pubmed.ncbi.nlm.nih.gov</a>
       <span class="hdivider"></span>
-      <span>180 days</span>
+      <span>90 days</span>
       <span class="hdivider"></span>
       <button class="settings-btn" id="settingsBtn" onclick="toggleSettings()">⚙ Settings</button>
     </div>
@@ -1691,7 +2320,7 @@
       </div>
       <div class="settings-section">
         <div class="settings-label">Time window</div>
-        <div class="settings-desc">Currently showing papers from the last <strong style="color:var(--accent)">180 days</strong>. To change, edit <code>const DAYS = 180</code> in the HTML file.</div>
+        <div class="settings-desc">Currently showing papers from the last <strong style="color:var(--accent)">90 days</strong>. To change, edit <code>const DAYS = 90</code> in the HTML file.</div>
       </div>
     </div>
   </div>
@@ -1715,6 +2344,59 @@
           <button class="reset-btn" onclick="clearAllSaved()">Clear all</button>
         </div>
         <div id="savedPanelList"></div>
+      </div>
+    </div>
+
+    <!-- ── Notes Hub panel ── -->
+    <div class="saved-panel" id="notesPanel">
+      <div class="saved-panel-inner">
+        <div class="saved-panel-title">
+          📝 Notes Hub
+          <button class="settings-close" onclick="document.getElementById('notesPanel').classList.remove('visible')">✕</button>
+        </div>
+        <div class="saved-panel-sub" id="notesPanelSub">Loading…</div>
+        <div class="notes-panel-toolbar">
+          <input type="text" id="notesSearchInput" class="filter-input" style="flex:1;min-width:120px"
+            placeholder="Search notes…" oninput="filterNotesPanel()"/>
+          <button class="tab-pdf-btn" onclick="exportAllNotesToPDF()">↓ Export PDF</button>
+        </div>
+        <div id="notesPanelList"></div>
+      </div>
+    </div>
+
+    <!-- ── PDF Viewer Modal ── -->
+    <div id="pdfViewerModal" class="pdf-modal">
+      <div class="pdf-modal-header">
+        <button class="pdf-back-btn" onclick="closePdfViewer()">← Back</button>
+        <div class="pdf-modal-title" id="pdfModalTitle">—</div>
+        <div class="pdf-toolbar">
+          <button class="pdf-tool-btn active" id="toolCursor"   onclick="setTool('cursor')"   title="Select">↖</button>
+          <button class="pdf-tool-btn"         id="toolHighlight" onclick="setTool('highlight')" title="Highlight">
+            <span style="background:#fde68a;padding:1px 5px;border-radius:2px">A</span>
+          </button>
+          <button class="pdf-tool-btn"         id="toolUnderline" onclick="setTool('underline')" title="Underline">
+            <span style="text-decoration:underline;text-decoration-color:#60a5fa">A</span>
+          </button>
+          <button class="pdf-tool-btn"         id="toolComment"   onclick="setTool('comment')"   title="Comment">💬</button>
+          <div class="pdf-tool-sep"></div>
+          <button class="pdf-tool-btn"         onclick="changePdfColor()" id="colorBtn" title="Color">
+            <span id="colorSwatch" style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#fde68a;border:1px solid rgba(255,255,255,0.3)"></span>
+          </button>
+          <div class="pdf-tool-sep"></div>
+          <span class="pdf-page-info">
+            Page <input id="pdfPageInput" type="number" min="1" class="pdf-page-num-input" onchange="goToPage(this.value)"/>
+            <span id="pdfPageTotal"> of —</span>
+          </span>
+          <button class="pdf-nav-btn" onclick="changePage(-1)">‹</button>
+          <button class="pdf-nav-btn" onclick="changePage(1)">›</button>
+        </div>
+      </div>
+      <div class="pdf-modal-body" id="pdfModalBody">
+        <div class="pdf-loading" id="pdfLoadingMsg">
+          <div class="spinner"></div>
+          <p>Rendering PDF…</p>
+        </div>
+        <div id="pdfPagesContainer"></div>
       </div>
     </div>
 
@@ -1803,7 +2485,7 @@
 <script>
 const TABS = [
   { id: 'eocrc',       label: 'EOCRC',                    query: '("colorectal neoplasms"[MeSH]) AND ("early-onset"[tiab] OR "young-onset"[tiab] OR "early onset colorectal"[tiab] OR "young adults"[tiab] OR "adolescents"[tiab] OR "under 50"[tiab] OR "age of onset"[tiab]) AND ("colorectal"[tiab] OR "colon"[tiab] OR "rectal"[tiab])' },
-  { id: 'colon',       label: 'Colon Cancer',              query: '("colon cancer"[MeSH] OR "colon neoplasms"[MeSH]) NOT ("rectal neoplasms"[MeSH])' },
+  { id: 'colon',       label: 'Colon Cancer',              query: '("colonic neoplasms"[MeSH]) NOT ("rectal neoplasms"[MeSH])' },
   { id: 'rectal',      label: 'Rectal Cancer',             query: '("rectal neoplasms"[MeSH] OR "rectal cancer"[tiab]) AND ("treatment"[tiab] OR "surgery"[tiab] OR "radiotherapy"[tiab])' },
   { id: 'msi',         label: 'MSS / MMRp',                query: '("colorectal neoplasms"[MeSH]) AND ("microsatellite stable"[tiab] OR "MSS"[tiab] OR "mismatch repair proficient"[tiab] OR "MMR-proficient"[tiab] OR "MMRp"[tiab] OR "sporadic colorectal cancer"[tiab] OR "sporadic colon cancer"[tiab] OR "sporadic colorectal neoplasm"[tiab])' },
   { id: 'targeted',    label: 'Targeted & Immunotherapy',  query: '("colorectal neoplasms"[MeSH]) AND ("bevacizumab"[tiab] OR "cetuximab"[tiab] OR "panitumumab"[tiab] OR "KRAS"[tiab] OR "BRAF"[tiab] OR "HER2"[tiab] OR "regorafenib"[tiab] OR "immune checkpoint"[tiab] OR "PD-1"[tiab] OR "PD-L1"[tiab] OR "pembrolizumab"[tiab] OR "nivolumab"[tiab] OR "immunotherapy"[MeSH])' },
@@ -1817,7 +2499,7 @@ const TABS = [
   { id: 'classical',   label: '⭐ Classical Papers',        query: null, isManual: true },
 ];
 
-const DAYS = 180;
+const DAYS = 90;
 const NCBI_KEY_STORAGE = 'ncbi-api-key';
 
 function ncbiKey() {
@@ -1868,26 +2550,68 @@ function updateKeyIndicator() {
 }
 
 // ── Storage helpers ───────────────────────────────────────────────────────────
-const STORAGE_KEY   = 'crc-digest-queries';
-const TAB_ORDER_KEY = 'crc-digest-tab-order';
+const STORAGE_KEY    = 'crc-digest-queries';
+const TAB_ORDER_KEY  = 'crc-digest-tab-order';
+const TAB_LABELS_KEY = 'crc-tab-labels';
+const TAB_NOTES_KEY  = 'crc-tab-notes';
+const AUTHOR_TABS_KEY = 'crc-author-tabs';
 
 function savedQueries() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
 }
 
+// ── Custom tab labels ─────────────────────────────────────────────────────────
+function savedTabLabels() {
+  try { return JSON.parse(localStorage.getItem(TAB_LABELS_KEY)) || {}; } catch { return {}; }
+}
+function getTabLabel(id) {
+  return savedTabLabels()[id] || getAllTabs().find(t => t.id === id)?.label || id;
+}
+function saveTabLabel(id, label) {
+  const labels = savedTabLabels(); labels[id] = label;
+  localStorage.setItem(TAB_LABELS_KEY, JSON.stringify(labels));
+}
+
+// ── Author tabs ───────────────────────────────────────────────────────────────
+function getAuthorTabs() {
+  try { return JSON.parse(localStorage.getItem(AUTHOR_TABS_KEY)) || []; } catch { return []; }
+}
+function saveAuthorTabs(tabs) {
+  localStorage.setItem(AUTHOR_TABS_KEY, JSON.stringify(tabs));
+}
+function getAllTabs() {
+  return [...TABS, ...getAuthorTabs()];
+}
+
+// ── Tab scratchpad notes ──────────────────────────────────────────────────────
+function getTabNote(id) {
+  try { return (JSON.parse(localStorage.getItem(TAB_NOTES_KEY)) || {})[id] || ''; } catch { return ''; }
+}
+function saveTabNote(id, text) {
+  try {
+    const notes = JSON.parse(localStorage.getItem(TAB_NOTES_KEY)) || {};
+    if (text.trim()) notes[id] = text; else delete notes[id];
+    localStorage.setItem(TAB_NOTES_KEY, JSON.stringify(notes));
+  } catch {}
+}
+
 function getTabOrder() {
   try {
     const saved = JSON.parse(localStorage.getItem(TAB_ORDER_KEY));
-    const ids = TABS.map(t => t.id);
-    if (saved && saved.length === TABS.length && saved.every(id => ids.includes(id))) return saved;
+    const allIds = getAllTabs().map(t => t.id);
+    if (saved) {
+      const filtered = saved.filter(id => allIds.includes(id));
+      const missing  = allIds.filter(id => !filtered.includes(id));
+      return [...filtered, ...missing];
+    }
   } catch {}
-  return TABS.map(t => t.id);
+  return getAllTabs().map(t => t.id);
 }
 
 function saveTabOrder(order) { localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(order)); }
 
 function getOrderedTabs() {
-  return getTabOrder().map(id => TABS.find(t => t.id === id));
+  return getTabOrder().map(id => getAllTabs().find(t => t.id === id)).filter(Boolean);
 }
 
 function getQuery(i) {
@@ -1941,12 +2665,78 @@ function buildTabs() {
 
   ordered.forEach((t, i) => {
     const btn = document.createElement('button');
-    btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
+    const isAuthor = !!t.isAuthor;
+    btn.className = 'tab-btn' + (i === 0 ? ' active' : '') + (isAuthor ? ' author-tab' : '');
     btn.dataset.tabId = t.id;
-    btn.setAttribute('data-tab-id', t.id);
     btn.draggable = true;
-    btn.innerHTML = `${escHtml(t.label)}<span class="tab-drag-grip">⠿</span>`;
-    btn.onclick = () => { currentTab = i; loadTab(i); };
+
+    // Label span — double-click to edit
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'tab-label-text';
+    labelSpan.textContent = getTabLabel(t.id);
+    labelSpan.title = 'Double-click to rename';
+    labelSpan.addEventListener('dblclick', e => {
+      e.stopPropagation();
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = labelSpan.textContent;
+      input.className = 'tab-label-input';
+      labelSpan.replaceWith(input);
+      input.focus(); input.select();
+      const commit = () => {
+        const newLabel = input.value.trim() || getTabLabel(t.id);
+        saveTabLabel(t.id, newLabel);
+        // also update in-memory author tab label if applicable
+        if (isAuthor) {
+          const ats = getAuthorTabs();
+          const at = ats.find(a => a.id === t.id);
+          if (at) { at.label = newLabel; saveAuthorTabs(ats); }
+        }
+        buildTabs();
+        const newIdx = getOrderedTabs().findIndex(tab => tab.id === t.id);
+        currentTab = newIdx >= 0 ? newIdx : currentTab;
+        setActiveTab(currentTab);
+      };
+      input.addEventListener('blur', commit);
+      input.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter')  { ev.preventDefault(); input.blur(); }
+        if (ev.key === 'Escape') { input.value = getTabLabel(t.id); input.blur(); }
+      });
+    });
+    btn.appendChild(labelSpan);
+    btn.onclick = ev => {
+      if (ev.target.classList.contains('tab-label-input')) return;
+      if (ev.target.classList.contains('tab-remove-btn')) return;
+      currentTab = i; loadTab(i);
+    };
+
+    // Author tab: remove button
+    if (isAuthor) {
+      const rm = document.createElement('button');
+      rm.className = 'tab-remove-btn';
+      rm.title = 'Remove author tab';
+      rm.textContent = '✕';
+      rm.addEventListener('click', e => {
+        e.stopPropagation();
+        if (!confirm(`Remove "${getTabLabel(t.id)}" tab?`)) return;
+        const ats = getAuthorTabs().filter(a => a.id !== t.id);
+        saveAuthorTabs(ats);
+        // Remove from tab order
+        const order = getTabOrder().filter(id => id !== t.id);
+        saveTabOrder(order);
+        const newCurrent = Math.max(0, currentTab - 1);
+        buildTabs();
+        currentTab = newCurrent;
+        setActiveTab(currentTab);
+        loadTab(currentTab);
+      });
+      btn.appendChild(rm);
+    } else {
+      const grip = document.createElement('span');
+      grip.className = 'tab-drag-grip';
+      grip.textContent = '⠿';
+      btn.appendChild(grip);
+    }
 
     btn.addEventListener('dragstart', e => { dragSrcIndex = i; btn.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
     btn.addEventListener('dragend', () => { btn.classList.remove('dragging'); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('drag-over')); });
@@ -1968,6 +2758,17 @@ function buildTabs() {
 
     bar.appendChild(btn);
   });
+
+  // Notes Hub button
+  let notesBtn = document.getElementById('sidebarNotesBtn');
+  if (!notesBtn) {
+    notesBtn = document.createElement('button');
+    notesBtn.className = 'sidebar-notes-btn';
+    notesBtn.id = 'sidebarNotesBtn';
+    notesBtn.onclick = openNotesHub;
+    bar.appendChild(notesBtn);
+  }
+  updateNotesCount();
 
   // Saved Papers button pinned at bottom of sidebar
   let savedBtn = document.getElementById('sidebarSavedBtn');
@@ -2013,6 +2814,8 @@ async function searchPubMed(query) {
 }
 
 // Fetch summaries in chunks of 200 (NCBI limit per request)
+const summaryCache = {}; // pmid → raw esummary object
+
 async function fetchSummaries(ids) {
   if (!ids.length) return [];
   const CHUNK = 200;
@@ -2022,7 +2825,7 @@ async function fetchSummaries(ids) {
     const res = await fetch(`${BASE_SUMMARY}?${ncbiParams({ db: 'pubmed', retmode: 'json', id: chunk.join(',') })}`);
     if (!res.ok) throw new Error('Summary fetch failed');
     const result = (await res.json()).result;
-    return chunk.map(id => result[id]).filter(Boolean);
+    return chunk.map(id => { const s = result[id]; if (s) summaryCache[id] = s; return s; }).filter(Boolean);
   }));
   return results.flat();
 }
@@ -2141,7 +2944,10 @@ async function renderPapers(summaries, abstracts, container, opts = {}) {
           <a class="pmid-badge" href="https://pubmed.ncbi.nlm.nih.gov/${pmid}/" target="_blank" onclick="event.stopPropagation()">PMID&nbsp;${escHtml(pmid)}</a>
           ${dupHtml}
         </div>
-        <div class="paper-title">${escHtml(title)}</div>
+        <div class="paper-title-row">
+          <div class="paper-title">${escHtml(title)}</div>
+          <span class="expand-chevron">▶</span>
+        </div>
         <div class="paper-authors">${escHtml(authors)}</div>
       </div>
       <div class="abstract-section">
@@ -2150,7 +2956,11 @@ async function renderPapers(summaries, abstracts, container, opts = {}) {
         <div class="card-actions">
           <button class="btn-read ${isRead ? 'is-read' : ''}" data-pmid="${pmid}">${isRead ? '✓ Read' : '○ Unread'}</button>
           <button class="btn-note ${hasNote ? 'has-note' : ''}" data-pmid="${pmid}">📝 Note${hasNote ? ' ●' : ''}</button>
+          <button class="btn-cite"    data-pmid="${pmid}">📋 Cite</button>
+          <button class="btn-related" data-pmid="${pmid}">🔗 Related</button>
+          <button class="btn-follow"  data-pmid="${pmid}" data-author="${escHtml(authors.split(',')[0].trim())}">👤 Follow</button>
           <button class="btn-ai" data-pmid="${pmid}">✨ AI Summary</button>
+          <button class="btn-pdf-upload" data-pmid="${pmid}" id="upload-btn-${pmid}">📎 Upload PDF</button>
           <button class="btn-save" data-pmid="${pmid}" onclick="toggleSavePaper(event, this)">🔖 Save</button>
           <button class="btn-pdf" onclick="downloadSinglePDF(event, '${pmid}')">↓ PDF</button>
           ${doiHtml}
@@ -2161,11 +2971,20 @@ async function renderPapers(summaries, abstracts, container, opts = {}) {
         <div class="ai-summary-label">✨ AI Clinical Summary</div>
         <div class="ai-summary-text loading"></div>
       </div>
+      <div class="related-section" id="related-section-${pmid}">
+        <div class="related-label">🔗 Related Papers</div>
+        <div class="related-list" id="related-list-${pmid}"></div>
+      </div>
       <div class="note-section" id="note-section-${pmid}">
         <div class="note-label">📝 Your Notes</div>
         <textarea class="note-textarea" id="note-textarea-${pmid}" placeholder="Add your thoughts, clinical relevance, or critique…">${escHtml(notesMap[pmid] || '')}</textarea>
         <div class="note-save-indicator" id="note-indicator-${pmid}"></div>
       </div>`;
+
+    // Click card-body to toggle open
+    card.querySelector('.card-body').addEventListener('click', () => {
+      card.classList.toggle('open');
+    });
 
     // Read button
     card.querySelector('.btn-read').addEventListener('click', e => {
@@ -2186,11 +3005,44 @@ async function renderPapers(summaries, abstracts, container, opts = {}) {
     noteTA.addEventListener('input', () => handleNoteInput(pmid, noteTA, noteInd));
     noteTA.addEventListener('click', e => e.stopPropagation());
 
+    // Cite button
+    card.querySelector('.btn-cite').addEventListener('click', e => {
+      e.stopPropagation();
+      copyCitation(e.currentTarget, pmid);
+    });
+
+    // Related papers button
+    card.querySelector('.btn-related').addEventListener('click', e => {
+      e.stopPropagation();
+      const section = document.getElementById(`related-section-${pmid}`);
+      const list    = document.getElementById(`related-list-${pmid}`);
+      showRelatedPapers(e.currentTarget, pmid, section, list);
+    });
+
+    // Follow author button
+    card.querySelector('.btn-follow').addEventListener('click', e => {
+      e.stopPropagation();
+      const author = e.currentTarget.dataset.author;
+      followAuthor(e.currentTarget, author);
+    });
+
     // AI summary button
     card.querySelector('.btn-ai').addEventListener('click', e => {
       e.stopPropagation();
       const section = document.getElementById(`ai-section-${pmid}`);
       toggleAISummary(pmid, e.currentTarget, section);
+    });
+
+    // PDF upload button
+    card.querySelector('.btn-pdf-upload').addEventListener('click', async e => {
+      e.stopPropagation();
+      const hasPdf = await dbHasPdf(pmid);
+      if (hasPdf) {
+        const paper = currentTabPapers.find(p => p.pmid === pmid);
+        openPdfViewer(pmid, paper?.title || pmid);
+      } else {
+        triggerPdfUpload(pmid, e.currentTarget);
+      }
     });
 
     list.appendChild(card);
@@ -2200,6 +3052,7 @@ async function renderPapers(summaries, abstracts, container, opts = {}) {
   area.appendChild(list);
 
   refreshSaveButtons();
+  refreshPdfUploadButtons();
   document.getElementById('markAllReadBtn').style.display = '';
 }
 
@@ -2254,6 +3107,7 @@ async function loadTab(i) {
     if (!ids.length) {
       document.getElementById('resultCount').textContent = '';
       area.innerHTML = '';
+      renderTabScratchpad(area, tab.id);
       await renderKeyPapersSection(tab.id, kpContainer);
       area.appendChild(kpContainer);
       area.innerHTML += `<div class="status-msg"><span class="status-icon">📭</span><p>No papers found in the last ${DAYS} days.</p></div>`;
@@ -2293,6 +3147,7 @@ async function loadTab(i) {
     const journalPrefs = getJournalPrefs(tab.id);
 
     area.innerHTML = '';
+    renderTabScratchpad(area, tab.id);
     await renderKeyPapersSection(tab.id, kpContainer);
     area.appendChild(kpContainer);
 
@@ -3312,17 +4167,787 @@ function toggleNoteSection(pmid, btn, section) {
   btn.classList.toggle('has-note', isOpen || btn.classList.contains('has-note'));
 }
 
+// ════════════════════════════════════════════════════════════
+// NOTES HUB
+// ════════════════════════════════════════════════════════════
+
+async function getAllNotes() {
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const req = d.transaction(DB_NOTES, 'readonly').objectStore(DB_NOTES).getAll();
+    req.onsuccess = () => res(req.result || []);
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+async function updateNotesCount() {
+  const btn = document.getElementById('sidebarNotesBtn');
+  if (!btn) return;
+  const notes = await getAllNotes();
+  const count = notes.filter(n => n.text?.trim()).length;
+  btn.innerHTML = `📝 Notes Hub <span class="notes-count-badge">${count}</span>`;
+}
+
+async function openNotesHub() {
+  document.getElementById('notesPanel').classList.add('visible');
+  await renderNotesPanel();
+}
+
+let _allNotesCached = [];
+
+async function renderNotesPanel(filter = '') {
+  const panel = document.getElementById('notesPanelList');
+  const sub   = document.getElementById('notesPanelSub');
+  panel.innerHTML = `<div class="status-msg" style="padding:30px 0"><div class="spinner"></div></div>`;
+
+  // Get all notes with text
+  const notes = (await getAllNotes()).filter(n => n.text?.trim());
+
+  // Get paper metadata: try saved papers first, then pinned
+  const savedPapers = await dbGetAll();
+  const pinnedAll = await getAllPinned();
+  const paperMap = {};
+  [...savedPapers, ...pinnedAll].forEach(p => { if (p.pmid) paperMap[p.pmid] = p; });
+
+  // Enrich with in-memory currentTabPapers
+  currentTabPapers.forEach(p => { if (!paperMap[p.pmid]) paperMap[p.pmid] = p; });
+
+  _allNotesCached = notes.map(n => ({
+    ...n,
+    paper: paperMap[n.pmid] || null,
+  }));
+
+  sub.textContent = `${notes.length} note${notes.length !== 1 ? 's' : ''} across all papers`;
+  renderNotesList(filter);
+}
+
+function renderNotesList(filter = '') {
+  const panel = document.getElementById('notesPanelList');
+  panel.innerHTML = '';
+  const lf = filter.toLowerCase();
+  const items = _allNotesCached.filter(n =>
+    !lf ||
+    n.text.toLowerCase().includes(lf) ||
+    (n.paper?.title || '').toLowerCase().includes(lf)
+  );
+
+  if (!items.length) {
+    panel.innerHTML = `<div class="saved-empty" style="padding:40px 0 0">
+      ${filter ? 'No notes match that search.' : 'No notes yet.<br>Click 📝 Note on any paper to add one.'}
+    </div>`;
+    return;
+  }
+
+  items.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+  items.forEach(n => {
+    const p = n.paper;
+    const el = document.createElement('div');
+    el.className = 'note-hub-item';
+    const dateStr = n.updatedAt ? new Date(n.updatedAt).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
+    el.innerHTML = `
+      <div class="note-hub-meta">
+        ${p?.journal ? `<span class="journal-tag" style="font-size:9px">${escHtml(p.journal)}</span>` : ''}
+        ${p?.pubdate ? `<span class="pub-date">${escHtml(p.pubdate)}</span>` : ''}
+        <a class="pmid-badge" href="https://pubmed.ncbi.nlm.nih.gov/${n.pmid}/" target="_blank">PMID ${escHtml(n.pmid)}</a>
+        ${dateStr ? `<span class="pub-date" style="margin-left:auto">${escHtml(dateStr)}</span>` : ''}
+      </div>
+      ${p?.title ? `<div class="note-hub-paper-title">${escHtml(p.title)}</div>` : `<div class="note-hub-paper-title" style="color:var(--muted)">PMID ${escHtml(n.pmid)}</div>`}
+      <div class="note-hub-text">${escHtml(n.text)}</div>
+      <div class="note-hub-actions">
+        <a class="btn-sm-pubmed" href="https://pubmed.ncbi.nlm.nih.gov/${n.pmid}/" target="_blank">↗ PubMed</a>
+        <button class="btn-sm-remove" onclick="deleteNoteFromHub('${n.pmid}', this.closest('.note-hub-item'))">✕ Delete note</button>
+      </div>`;
+    panel.appendChild(el);
+  });
+}
+
+function filterNotesPanel() {
+  const q = document.getElementById('notesSearchInput')?.value || '';
+  renderNotesList(q);
+}
+
+async function deleteNoteFromHub(pmid, el) {
+  if (!confirm('Delete this note?')) return;
+  await saveNote(pmid, '');
+  el.remove();
+  await updateNotesCount();
+  // Update button in main view if visible
+  const btn = document.querySelector(`.btn-note[data-pmid="${pmid}"]`);
+  if (btn) { btn.classList.remove('has-note'); btn.textContent = '📝 Note'; }
+  // Update cached list
+  _allNotesCached = _allNotesCached.filter(n => n.pmid !== pmid);
+  const sub = document.getElementById('notesPanelSub');
+  if (sub) sub.textContent = `${_allNotesCached.length} note${_allNotesCached.length !== 1 ? 's' : ''} across all papers`;
+}
+
+async function getAllPinned() {
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const req = d.transaction(DB_PINNED, 'readonly').objectStore(DB_PINNED).getAll();
+    req.onsuccess = () => res(req.result || []);
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+async function exportAllNotesToPDF() {
+  const items = _allNotesCached.filter(n => n.text?.trim());
+  if (!items.length) { alert('No notes to export.'); return; }
+  const papers = items.map(n => ({
+    pmid:     n.pmid,
+    title:    n.paper?.title || `PMID ${n.pmid}`,
+    authors:  n.paper?.authors || '',
+    journal:  n.paper?.journal || '',
+    pubdate:  n.paper?.pubdate || '',
+    abstract: '── Your note ──\n\n' + n.text,
+  }));
+  buildPDF(papers, 'My Notes — Literature Digest').save('my_notes_digest.pdf');
+}
+
+// ════════════════════════════════════════════════════════════
+// PDF STORAGE (IndexedDB — store: pdf_files, pdf_annotations)
+// ════════════════════════════════════════════════════════════
+
+const DB_PDF_FILES  = 'pdf_files';
+const DB_PDF_ANNOTS = 'pdf_annotations';
+
+// Upgrade DB to v4 on next open if stores missing
+async function openDBv4() {
+  return new Promise((resolve, reject) => {
+    if (_db && _db.objectStoreNames.contains(DB_PDF_FILES)) return resolve(_db);
+    // Close existing connection so we can upgrade
+    if (_db) { _db.close(); _db = null; }
+    const req = indexedDB.open(DB_NAME, 4);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      // Keep existing stores untouched
+      if (!d.objectStoreNames.contains(DB_STORE)) {
+        const s = d.createObjectStore(DB_STORE, { keyPath: 'pmid' });
+        s.createIndex('tabId','tabId',{unique:false}); s.createIndex('savedAt','savedAt',{unique:false});
+      }
+      if (!d.objectStoreNames.contains(DB_PINNED)) {
+        const ps = d.createObjectStore(DB_PINNED, { keyPath: 'id' });
+        ps.createIndex('tabId','tabId',{unique:false}); ps.createIndex('pinnedAt','pinnedAt',{unique:false});
+      }
+      if (!d.objectStoreNames.contains(DB_NOTES)) d.createObjectStore(DB_NOTES, { keyPath: 'pmid' });
+      if (!d.objectStoreNames.contains(DB_READ))  d.createObjectStore(DB_READ,  { keyPath: 'pmid' });
+      if (!d.objectStoreNames.contains(DB_PDF_FILES))  d.createObjectStore(DB_PDF_FILES,  { keyPath: 'pmid' });
+      if (!d.objectStoreNames.contains(DB_PDF_ANNOTS)) d.createObjectStore(DB_PDF_ANNOTS, { keyPath: 'id' }); // id = pmid:page:idx
+    };
+    req.onsuccess  = e => { _db = e.target.result; resolve(_db); };
+    req.onerror    = e => reject(e.target.error);
+  });
+}
+
+async function dbSavePdf(pmid, arrayBuffer) {
+  const d = await openDBv4();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(DB_PDF_FILES, 'readwrite');
+    tx.objectStore(DB_PDF_FILES).put({ pmid, data: arrayBuffer, savedAt: Date.now() });
+    tx.oncomplete = res; tx.onerror = e => rej(e.target.error);
+  });
+}
+
+async function dbGetPdf(pmid) {
+  const d = await openDBv4();
+  return new Promise((res, rej) => {
+    const req = d.transaction(DB_PDF_FILES, 'readonly').objectStore(DB_PDF_FILES).get(pmid);
+    req.onsuccess = () => res(req.result?.data || null);
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+async function dbHasPdf(pmid) {
+  const d = await openDBv4();
+  return new Promise((res, rej) => {
+    const req = d.transaction(DB_PDF_FILES, 'readonly').objectStore(DB_PDF_FILES).getKey(pmid);
+    req.onsuccess = () => res(!!req.result);
+    req.onerror   = () => res(false);
+  });
+}
+
+// Annotations: stored as { id: 'pmid:page:ts', pmid, page, type, color, x, y, w, h, text }
+async function dbSaveAnnotation(annot) {
+  const d = await openDBv4();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(DB_PDF_ANNOTS, 'readwrite');
+    tx.objectStore(DB_PDF_ANNOTS).put(annot);
+    tx.oncomplete = res; tx.onerror = e => rej(e.target.error);
+  });
+}
+
+async function dbDeleteAnnotation(id) {
+  const d = await openDBv4();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(DB_PDF_ANNOTS, 'readwrite');
+    tx.objectStore(DB_PDF_ANNOTS).delete(id);
+    tx.oncomplete = res; tx.onerror = e => rej(e.target.error);
+  });
+}
+
+async function dbGetAnnotationsForPage(pmid, page) {
+  const d = await openDBv4();
+  return new Promise((res, rej) => {
+    const req = d.transaction(DB_PDF_ANNOTS, 'readonly').objectStore(DB_PDF_ANNOTS).getAll();
+    req.onsuccess = () => res((req.result || []).filter(a => a.pmid === pmid && a.page === page));
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// PDF UPLOAD & VIEWER
+// ════════════════════════════════════════════════════════════
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let pdfViewerState = {
+  pmid: null, title: null,
+  pdfDoc: null, totalPages: 0,
+  renderedPages: new Set(),
+  tool: 'cursor',
+  color: '#fde68a',
+  drawStart: null,
+  activeCommentPopup: null,
+};
+
+const TOOL_COLORS = ['#fde68a', '#86efac', '#93c5fd', '#f9a8d4', '#fca5a5', '#c4b5fd'];
+let colorIdx = 0;
+
+function triggerPdfUpload(pmid, btn) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'application/pdf';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    btn.textContent = '⏳ Loading…'; btn.disabled = true;
+    try {
+      const buf = await file.arrayBuffer();
+      await dbSavePdf(pmid, buf);
+      btn.textContent = '📖 Open PDF';
+      btn.classList.add('has-pdf');
+      btn.disabled = false;
+      const paper = currentTabPapers.find(p => p.pmid === pmid);
+      openPdfViewer(pmid, paper?.title || pmid);
+    } catch(err) {
+      btn.textContent = '📎 Upload PDF'; btn.disabled = false;
+      alert('Could not load PDF: ' + err.message);
+    }
+  };
+  input.click();
+}
+
+async function refreshPdfUploadButtons() {
+  const btns = document.querySelectorAll('.btn-pdf-upload[data-pmid]');
+  for (const btn of btns) {
+    const pmid = btn.dataset.pmid;
+    const has = await dbHasPdf(pmid);
+    if (has) { btn.textContent = '📖 Open PDF'; btn.classList.add('has-pdf'); }
+    else      { btn.textContent = '📎 Upload PDF'; btn.classList.remove('has-pdf'); }
+  }
+}
+
+async function openPdfViewer(pmid, title) {
+  const buf = await dbGetPdf(pmid);
+  if (!buf) { alert('No PDF stored for this paper. Upload one first.'); return; }
+
+  const modal = document.getElementById('pdfViewerModal');
+  document.getElementById('pdfModalTitle').textContent = title || pmid;
+  document.getElementById('pdfPagesContainer').innerHTML = '';
+  document.getElementById('pdfLoadingMsg').style.display = 'flex';
+  modal.classList.add('open');
+
+  pdfViewerState = { pmid, title, pdfDoc: null, totalPages: 0,
+    renderedPages: new Set(), tool: 'cursor', color: '#fde68a',
+    drawStart: null, activeCommentPopup: null };
+
+  setTool('cursor');
+
+  try {
+    const loadTask = pdfjsLib.getDocument({ data: buf.slice(0) });
+    const pdfDoc   = await loadTask.promise;
+    pdfViewerState.pdfDoc      = pdfDoc;
+    pdfViewerState.totalPages  = pdfDoc.numPages;
+
+    document.getElementById('pdfPageInput').value = 1;
+    document.getElementById('pdfPageTotal').textContent = ` of ${pdfDoc.numPages}`;
+
+    document.getElementById('pdfLoadingMsg').style.display = 'none';
+
+    // Render all pages sequentially
+    for (let p = 1; p <= pdfDoc.numPages; p++) {
+      await renderPdfPage(pmid, pdfDoc, p);
+    }
+  } catch(err) {
+    document.getElementById('pdfLoadingMsg').innerHTML =
+      `<span style="color:var(--warn)">⚠ Could not render PDF: ${escHtml(err.message)}</span>`;
+  }
+}
+
+async function renderPdfPage(pmid, pdfDoc, pageNum) {
+  const container = document.getElementById('pdfPagesContainer');
+  const page    = await pdfDoc.getPage(pageNum);
+  const vp      = page.getViewport({ scale: 1.5 });
+
+  const wrap    = document.createElement('div');
+  wrap.className = 'pdf-page-wrap';
+  wrap.dataset.page = pageNum;
+  wrap.style.width  = vp.width  + 'px';
+  wrap.style.height = vp.height + 'px';
+
+  const canvas  = document.createElement('canvas');
+  canvas.width  = vp.width;
+  canvas.height = vp.height;
+
+  const annotLayer = document.createElement('div');
+  annotLayer.className = 'pdf-annot-layer';
+  annotLayer.dataset.page = pageNum;
+
+  wrap.appendChild(canvas);
+  wrap.appendChild(annotLayer);
+  container.appendChild(wrap);
+
+  // Render into canvas
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+
+  // Load saved annotations for this page
+  const annots = await dbGetAnnotationsForPage(pmid, pageNum);
+  annots.forEach(a => renderAnnotMark(a, annotLayer, vp));
+
+  // Drawing interaction
+  annotLayer.addEventListener('mousedown', e => onAnnotMouseDown(e, pmid, pageNum, annotLayer, vp));
+  annotLayer.addEventListener('mousemove', e => onAnnotMouseMove(e, annotLayer));
+  annotLayer.addEventListener('mouseup',   e => onAnnotMouseUp(e, pmid, pageNum, annotLayer, vp));
+  annotLayer.addEventListener('touchstart', e => onAnnotTouchStart(e, pmid, pageNum, annotLayer, vp), { passive: false });
+  annotLayer.addEventListener('touchend',   e => onAnnotTouchEnd(e, pmid, pageNum, annotLayer, vp),   { passive: false });
+
+  pdfViewerState.renderedPages.add(pageNum);
+}
+
+function renderAnnotMark(annot, layer, vp) {
+  const el = document.createElement('div');
+  el.className = `annot-mark ${annot.type}`;
+  el.dataset.id = annot.id;
+  el.style.left   = (annot.x  * (layer.offsetWidth  || vp.width))  + 'px';
+  el.style.top    = (annot.y  * (layer.offsetHeight || vp.height)) + 'px';
+  el.style.width  = (annot.w  * (layer.offsetWidth  || vp.width))  + 'px';
+  el.style.height = (annot.h  * (layer.offsetHeight || vp.height)) + 'px';
+  el.style.background = annot.type === 'comment-pin' ? 'none' : annot.color;
+
+  if (annot.type === 'comment-pin') { el.textContent = '💬'; }
+
+  // Right-click or long-press to delete
+  el.addEventListener('contextmenu', async ev => {
+    ev.preventDefault(); ev.stopPropagation();
+    if (confirm('Delete this annotation?')) {
+      await dbDeleteAnnotation(annot.id);
+      el.remove();
+    }
+  });
+
+  // Click comment pin to show text
+  if (annot.type === 'comment-pin' && annot.text) {
+    el.addEventListener('click', ev => {
+      ev.stopPropagation();
+      closeCommentPopup();
+      showCommentReadPopup(annot, el, layer);
+    });
+  }
+
+  layer.appendChild(el);
+  return el;
+}
+
+// ── Draw state ────────────────────────────────────────────────────────────────
+let _drawEl = null;
+let _drawStartX = 0, _drawStartY = 0;
+
+function getRelPos(e, layer) {
+  const r = layer.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: (clientX - r.left) / r.width, y: (clientY - r.top) / r.height,
+           px: clientX - r.left, py: clientY - r.top };
+}
+
+function onAnnotMouseDown(e, pmid, page, layer, vp) {
+  const tool = pdfViewerState.tool;
+  if (tool === 'cursor') return;
+  e.preventDefault();
+  if (tool === 'comment') { placeCommentPin(e, pmid, page, layer, vp); return; }
+  const pos = getRelPos(e, layer);
+  _drawStartX = pos.x; _drawStartY = pos.y;
+  _drawEl = document.createElement('div');
+  _drawEl.className = `annot-mark ${tool}`;
+  _drawEl.style.left   = pos.px + 'px';
+  _drawEl.style.top    = pos.py + 'px';
+  _drawEl.style.width  = '0px';
+  _drawEl.style.height = tool === 'underline' ? '2px' : '0px';
+  _drawEl.style.background = pdfViewerState.color;
+  layer.appendChild(_drawEl);
+}
+
+function onAnnotMouseMove(e, layer) {
+  if (!_drawEl) return;
+  const pos = getRelPos(e, layer);
+  const x = Math.min(pos.x, _drawStartX);
+  const y = Math.min(pos.y, _drawStartY);
+  const w = Math.abs(pos.x - _drawStartX);
+  const h = pdfViewerState.tool === 'underline' ? 0.005
+            : Math.abs(pos.y - _drawStartY);
+  _drawEl.style.left   = (x * layer.offsetWidth)  + 'px';
+  _drawEl.style.top    = (y * layer.offsetHeight) + 'px';
+  _drawEl.style.width  = (w * layer.offsetWidth)  + 'px';
+  _drawEl.style.height = pdfViewerState.tool === 'underline'
+    ? '2px' : (h * layer.offsetHeight) + 'px';
+}
+
+async function onAnnotMouseUp(e, pmid, page, layer, vp) {
+  if (!_drawEl) return;
+  const pos = getRelPos(e, layer);
+  const x = Math.min(pos.x, _drawStartX);
+  const y = Math.min(pos.y, _drawStartY);
+  const w = Math.abs(pos.x - _drawStartX);
+  const h = pdfViewerState.tool === 'underline' ? 0.005
+            : Math.abs(pos.y - _drawStartY);
+
+  if (w < 0.005 && h < 0.005) { _drawEl.remove(); _drawEl = null; return; }
+
+  const id    = `${pmid}:${page}:${Date.now()}`;
+  const annot = { id, pmid, page, type: pdfViewerState.tool, color: pdfViewerState.color, x, y, w, h, text: '' };
+  await dbSaveAnnotation(annot);
+  _drawEl.dataset.id = id;
+
+  // Right-click to delete
+  _drawEl.addEventListener('contextmenu', async ev => {
+    ev.preventDefault(); ev.stopPropagation();
+    if (confirm('Delete this annotation?')) { await dbDeleteAnnotation(id); _drawEl?.remove(); }
+  });
+  _drawEl = null;
+}
+
+// Touch passthrough
+function onAnnotTouchStart(e, pmid, page, layer, vp) {
+  e.preventDefault();
+  onAnnotMouseDown(e, pmid, page, layer, vp);
+}
+function onAnnotTouchEnd(e, pmid, page, layer, vp) {
+  e.preventDefault();
+  onAnnotMouseUp(e, pmid, page, layer, vp);
+}
+
+// ── Comment pin ───────────────────────────────────────────────────────────────
+function placeCommentPin(e, pmid, page, layer, vp) {
+  closeCommentPopup();
+  const pos = getRelPos(e, layer);
+  const pinEl = document.createElement('div');
+  pinEl.className = 'annot-mark comment-pin';
+  pinEl.textContent = '💬';
+  pinEl.style.left   = (pos.x * layer.offsetWidth  - 11) + 'px';
+  pinEl.style.top    = (pos.y * layer.offsetHeight - 11) + 'px';
+  pinEl.style.width  = '22px'; pinEl.style.height = '22px';
+  layer.appendChild(pinEl);
+
+  const popup = showCommentEditPopup(pos, pinEl, layer, async text => {
+    if (!text.trim()) { pinEl.remove(); return; }
+    const id    = `${pmid}:${page}:${Date.now()}`;
+    const annot = {
+      id, pmid, page, type: 'comment-pin', color: pdfViewerState.color,
+      x: pos.x - (11 / layer.offsetWidth),
+      y: pos.y - (11 / layer.offsetHeight),
+      w: 22 / layer.offsetWidth,
+      h: 22 / layer.offsetHeight,
+      text,
+    };
+    await dbSaveAnnotation(annot);
+    pinEl.dataset.id = id;
+    pinEl.addEventListener('click', ev => { ev.stopPropagation(); closeCommentPopup(); showCommentReadPopup(annot, pinEl, layer); });
+    pinEl.addEventListener('contextmenu', async ev => {
+      ev.preventDefault(); ev.stopPropagation();
+      if (confirm('Delete comment?')) { await dbDeleteAnnotation(id); pinEl.remove(); }
+    });
+  });
+  pdfViewerState.activeCommentPopup = popup;
+}
+
+function showCommentEditPopup(pos, pinEl, layer, onSave) {
+  const popup = document.createElement('div');
+  popup.className = 'comment-popup';
+  popup.style.left = Math.min((pos.x * layer.offsetWidth) + 26, layer.offsetWidth - 310) + 'px';
+  popup.style.top  = (pos.y * layer.offsetHeight) + 'px';
+  popup.innerHTML = `
+    <textarea placeholder="Type your comment…" rows="3"></textarea>
+    <div class="comment-popup-actions">
+      <button class="reset-btn" style="padding:4px 10px" onclick="this.closest('.comment-popup').remove()">Cancel</button>
+      <button class="save-btn"  style="padding:4px 12px" id="saveCommentBtn">Save</button>
+    </div>`;
+  layer.appendChild(popup);
+  popup.querySelector('textarea').focus();
+  popup.querySelector('#saveCommentBtn').onclick = () => {
+    const text = popup.querySelector('textarea').value;
+    popup.remove();
+    onSave(text);
+  };
+  return popup;
+}
+
+function showCommentReadPopup(annot, pinEl, layer) {
+  const popup = document.createElement('div');
+  popup.className = 'comment-popup';
+  const r = pinEl.getBoundingClientRect();
+  const lr = layer.getBoundingClientRect();
+  popup.style.left = Math.min(r.left - lr.left + 26, layer.offsetWidth - 310) + 'px';
+  popup.style.top  = (r.top  - lr.top) + 'px';
+  popup.innerHTML = `
+    <div style="font-size:12.5px;color:var(--text2);line-height:1.65;margin-bottom:8px;white-space:pre-wrap">${escHtml(annot.text)}</div>
+    <div class="comment-popup-actions">
+      <button class="btn-sm-remove" onclick="deleteAnnotAndClose('${annot.id}', this)">✕ Delete</button>
+      <button class="save-btn" style="padding:4px 12px" onclick="this.closest('.comment-popup').remove()">Close</button>
+    </div>`;
+  layer.appendChild(popup);
+  pdfViewerState.activeCommentPopup = popup;
+  return popup;
+}
+
+async function deleteAnnotAndClose(id, btn) {
+  await dbDeleteAnnotation(id);
+  const mark = document.querySelector(`.annot-mark[data-id="${id}"]`);
+  if (mark) mark.remove();
+  btn.closest('.comment-popup').remove();
+}
+
+function closeCommentPopup() {
+  pdfViewerState.activeCommentPopup?.remove();
+  pdfViewerState.activeCommentPopup = null;
+}
+
+// ── Toolbar controls ──────────────────────────────────────────────────────────
+function setTool(tool) {
+  pdfViewerState.tool = tool;
+  ['cursor','highlight','underline','comment'].forEach(t => {
+    document.getElementById('tool' + t.charAt(0).toUpperCase() + t.slice(1))?.classList.toggle('active', t === tool);
+  });
+  // Update cursor class on all annot layers
+  document.querySelectorAll('.pdf-annot-layer').forEach(l => {
+    l.className = 'pdf-annot-layer tool-' + tool;
+  });
+  closeCommentPopup();
+}
+
+function changePdfColor() {
+  colorIdx = (colorIdx + 1) % TOOL_COLORS.length;
+  pdfViewerState.color = TOOL_COLORS[colorIdx];
+  document.getElementById('colorSwatch').style.background = pdfViewerState.color;
+}
+
+function changePage(delta) {
+  const inp = document.getElementById('pdfPageInput');
+  const cur = parseInt(inp.value) || 1;
+  const np  = Math.max(1, Math.min(pdfViewerState.totalPages, cur + delta));
+  goToPage(np);
+}
+
+function goToPage(pageNum) {
+  pageNum = Math.max(1, Math.min(pdfViewerState.totalPages, parseInt(pageNum) || 1));
+  document.getElementById('pdfPageInput').value = pageNum;
+  const wrap = document.querySelector(`.pdf-page-wrap[data-page="${pageNum}"]`);
+  if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closePdfViewer() {
+  document.getElementById('pdfViewerModal').classList.remove('open');
+  closeCommentPopup();
+  _drawEl = null;
+  pdfViewerState.pdfDoc = null;
+  document.getElementById('pdfPagesContainer').innerHTML = '';
+}
+
+// Also refresh notes count when a note is saved
 function handleNoteInput(pmid, textarea, indicator) {
   clearTimeout(noteSaveTimers[pmid]);
   indicator.textContent = 'Saving…';
   noteSaveTimers[pmid] = setTimeout(async () => {
     await saveNote(pmid, textarea.value);
     indicator.textContent = '✓ Saved';
-    // Update btn indicator
     const btn = document.querySelector(`.btn-note[data-pmid="${pmid}"]`);
     if (btn) btn.classList.toggle('has-note', !!textarea.value.trim());
+    await updateNotesCount();
     setTimeout(() => { indicator.textContent = ''; }, 1500);
   }, 800);
+}
+
+// ════════════════════════════════════════════════════════════
+// 1. CITATION COPY
+// ════════════════════════════════════════════════════════════
+
+function buildVancouverCitation(s) {
+  const auths = (s.authors || []);
+  const names = auths.slice(0, 6).map(a => a.name).join(', ');
+  const et    = auths.length > 6 ? ', et al' : '';
+  const vol   = s.volume ? `;${s.volume}` : '';
+  const iss   = s.issue  ? `(${s.issue})` : '';
+  const pages = s.pages  ? `:${s.pages}`  : '';
+  const doi   = (s.articleids || []).find(a => a.idtype === 'doi')?.value;
+  const doiStr = doi ? ` doi:${doi}.` : '';
+  const title = (s.title || '').replace(/\.$/, '');
+  return `${names}${et}. ${title}. ${s.fulljournalname || s.source || ''}. ${s.pubdate}${vol}${iss}${pages}.${doiStr} PMID: ${s.uid}.`;
+}
+
+async function copyCitation(btn, pmid) {
+  const s = summaryCache[pmid];
+  if (!s) { btn.textContent = '⚠ Not loaded'; setTimeout(() => { btn.textContent = '📋 Cite'; }, 2000); return; }
+  const text = buildVancouverCitation(s);
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 Cite'; btn.classList.remove('copied'); }, 2200);
+  } catch {
+    // Fallback for browsers that block clipboard without user gesture
+    prompt('Copy this citation:', text);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// 4. TAB SCRATCHPAD
+// ════════════════════════════════════════════════════════════
+
+let scratchpadTimers = {};
+
+function renderTabScratchpad(area, tabId) {
+  const existing = area.querySelector('.tab-scratchpad');
+  if (existing) existing.remove();
+
+  const note    = getTabNote(tabId);
+  const wrap    = document.createElement('div');
+  wrap.className = 'tab-scratchpad' + (note ? ' has-content' : '');
+  wrap.innerHTML = `
+    <div class="tab-scratchpad-header">
+      <span class="tab-scratchpad-title">
+        <span class="scratchpad-dot"></span>
+        📓 Tab Notes
+      </span>
+      <span class="tab-scratchpad-chevron">▶</span>
+    </div>
+    <div class="tab-scratchpad-body">
+      <textarea placeholder="Your running notes on this topic — hypotheses, gaps, key papers to investigate…">${escHtml(note)}</textarea>
+      <div class="tab-scratchpad-status"></div>
+    </div>`;
+
+  const header   = wrap.querySelector('.tab-scratchpad-header');
+  const textarea = wrap.querySelector('textarea');
+  const status   = wrap.querySelector('.tab-scratchpad-status');
+
+  header.addEventListener('click', () => wrap.classList.toggle('open'));
+
+  textarea.addEventListener('click', e => e.stopPropagation());
+  textarea.addEventListener('input', () => {
+    clearTimeout(scratchpadTimers[tabId]);
+    status.textContent = 'Saving…';
+    wrap.classList.toggle('has-content', !!textarea.value.trim());
+    scratchpadTimers[tabId] = setTimeout(() => {
+      saveTabNote(tabId, textarea.value);
+      status.textContent = '✓ Saved';
+      setTimeout(() => { status.textContent = ''; }, 1500);
+    }, 700);
+  });
+
+  // Auto-open if there's content
+  if (note) wrap.classList.add('open');
+
+  area.appendChild(wrap);
+}
+
+// ════════════════════════════════════════════════════════════
+// 6. RELATED PAPERS (PubMed elink)
+// ════════════════════════════════════════════════════════════
+
+async function showRelatedPapers(btn, pmid, section, list) {
+  const isOpen = section.classList.toggle('open');
+  if (!isOpen) { btn.textContent = '🔗 Related'; return; }
+
+  // Already loaded?
+  if (list.dataset.loaded) return;
+
+  btn.textContent = '⏳ Loading…'; btn.disabled = true;
+
+  try {
+    const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?${ncbiParams({
+      dbfrom: 'pubmed', db: 'pubmed', id: pmid, cmd: 'neighbor_score', retmode: 'json'
+    })}`;
+    const data = await (await fetch(url)).json();
+    const links = (data.linksets?.[0]?.linksetdbs || [])
+      .find(d => d.linkname === 'pubmed_pubmed')?.links || [];
+    const relIds = links.slice(0, 6).map(l => String(l.id || l)).filter(id => id !== pmid);
+
+    if (!relIds.length) {
+      list.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:6px 0">No related papers found.</div>`;
+      list.dataset.loaded = '1'; btn.textContent = '🔗 Related'; btn.disabled = false; return;
+    }
+
+    const summaries = await fetchSummaries(relIds);
+    list.innerHTML = summaries.map(s => {
+      const auth = formatAuthors(s.authors);
+      return `
+        <div class="related-item">
+          <div class="related-meta">
+            <span class="journal-tag" style="font-size:8.5px">${escHtml(s.fulljournalname || s.source || '')}</span>
+            <span class="pub-date">${escHtml(s.pubdate || '')}</span>
+            <a class="pmid-badge" href="https://pubmed.ncbi.nlm.nih.gov/${s.uid}/" target="_blank" style="font-size:8.5px">PMID ${escHtml(s.uid)}</a>
+          </div>
+          <div class="related-title">
+            <a href="https://pubmed.ncbi.nlm.nih.gov/${s.uid}/" target="_blank">${escHtml(s.title || '')}</a>
+          </div>
+          <div class="related-authors">${escHtml(auth)}</div>
+        </div>`;
+    }).join('');
+    list.dataset.loaded = '1';
+  } catch {
+    list.innerHTML = `<div style="color:var(--warn);font-size:12px">Could not load related papers.</div>`;
+    list.dataset.loaded = '1';
+  }
+
+  btn.textContent = '🔗 Related'; btn.disabled = false;
+}
+
+// ════════════════════════════════════════════════════════════
+// 7. AUTHOR FOLLOW
+// ════════════════════════════════════════════════════════════
+
+function followAuthor(btn, authorName) {
+  if (!authorName) return;
+  const existing = getAuthorTabs();
+  const id = 'author-' + authorName.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 32);
+
+  if (existing.find(a => a.id === id)) {
+    // Already following — jump to tab
+    btn.textContent = '✓ Following'; btn.classList.add('active');
+    setTimeout(() => { btn.textContent = '👤 Follow'; btn.classList.remove('active'); }, 2000);
+    const idx = getOrderedTabs().findIndex(t => t.id === id);
+    if (idx >= 0) { currentTab = idx; loadTab(idx); buildTabs(); setActiveTab(idx); }
+    return;
+  }
+
+  // Confirm and add
+  const confirmed = confirm(`Follow "${authorName}"?\n\nA new tab will appear in the sidebar showing their recent PubMed publications.`);
+  if (!confirmed) return;
+
+  const query = `"${authorName}"[au]`;
+  const label = `👤 ${authorName}`;
+  existing.push({ id, label, query, isAuthor: true });
+  saveAuthorTabs(existing);
+
+  // Add to tab order at end
+  const order = getTabOrder();
+  if (!order.includes(id)) order.push(id);
+  saveTabOrder(order);
+
+  buildTabs();
+  const idx = getOrderedTabs().findIndex(t => t.id === id);
+  if (idx >= 0) { currentTab = idx; loadTab(idx); setActiveTab(idx); }
+
+  btn.textContent = '✓ Following'; btn.classList.add('active');
+  setTimeout(() => { btn.textContent = '👤 Follow'; btn.classList.remove('active'); }, 2500);
 }
 
 // ── Escape HTML ───────────────────────────────────────────────────────────────
@@ -3331,6 +4956,13 @@ function escHtml(str) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+function setHeaderHeight() {
+  const h = document.querySelector('header')?.offsetHeight || 75;
+  document.documentElement.style.setProperty('--header-h', h + 'px');
+}
+setHeaderHeight();
+window.addEventListener('resize', setHeaderHeight);
+
 buildTabs();
 updateKeyIndicator();
 loadTab(0);
