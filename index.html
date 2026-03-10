@@ -582,8 +582,74 @@
     .paper-title-row {
       display: flex;
       align-items: flex-start;
-      gap: 10px;
+      gap: 8px;
     }
+
+    /* ── Star button ── */
+    .btn-star {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 17px;
+      line-height: 1;
+      padding: 1px 2px 0;
+      color: var(--border2);
+      transition: color 0.15s, transform 0.15s;
+      margin-top: 1px;
+    }
+    .btn-star:hover           { color: var(--gold); transform: scale(1.18); }
+    .btn-star.starred         { color: var(--gold); }
+    .paper-card.is-starred .btn-star { color: var(--gold); }
+
+    /* Starred card: gold left stripe + subtle gold tint */
+    .paper-card.is-starred::before         { background: var(--gold) !important; }
+    .paper-card.is-starred                 { background: rgba(232,185,106,0.04); }
+    .paper-card.is-starred:hover           { background: rgba(232,185,106,0.08); }
+    .paper-card.is-starred .paper-title    { color: #f0d090; }
+
+    /* ── Delete (dismiss) button ── */
+    .btn-dismiss {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1;
+      padding: 2px 3px 0;
+      color: transparent;
+      transition: color 0.15s, transform 0.12s;
+      margin-top: 2px;
+    }
+    .card-body:hover .btn-dismiss     { color: var(--muted); }
+    .btn-dismiss:hover                { color: var(--warn) !important; transform: scale(1.15); }
+
+    /* Dismissed card fade-out animation */
+    .paper-card.dismissing {
+      animation: dismissCard 0.28s ease forwards;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    @keyframes dismissCard {
+      0%   { opacity: 1; max-height: 400px; margin-bottom: 0; }
+      40%  { opacity: 0; max-height: 400px; }
+      100% { opacity: 0; max-height: 0;   margin-bottom: -6px; padding: 0; }
+    }
+
+    /* "Show hidden" restore bar */
+    .hidden-restore-bar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 8px 14px; margin-bottom: 8px;
+      background: rgba(240,160,96,0.07); border: 1px solid rgba(240,160,96,0.22);
+      border-radius: 8px; font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px; color: var(--warn);
+    }
+    .hidden-restore-bar button {
+      background: none; border: 1px solid rgba(240,160,96,0.35);
+      color: var(--warn); font-family: 'Inter', sans-serif; font-size: 11px;
+      padding: 3px 10px; border-radius: 5px; cursor: pointer; transition: all 0.15s;
+    }
+    .hidden-restore-bar button:hover { background: rgba(240,160,96,0.12); }
 
     .paper-title {
       flex: 1;
@@ -2458,8 +2524,9 @@
         <select id="filterJournal" class="filter-select" onchange="applyFilters()">
           <option value="">All journals</option>
         </select>
-        <button class="filter-toggle" id="filterUnreadBtn" onclick="toggleFilterUnread()">Unread only</button>
+        <button class="filter-toggle" id="filterUnreadBtn"   onclick="toggleFilterUnread()">Unread only</button>
         <button class="filter-toggle" id="filterPriorityBtn" onclick="toggleFilterPriority()">⭐ Priority only</button>
+        <button class="filter-toggle" id="filterStarredBtn"  onclick="toggleFilterStarred()">★ Starred only</button>
         <span id="filterCount" class="filter-count"></span>
         <button class="reset-btn" style="padding:4px 10px;font-size:11px" onclick="clearFilters()">✕ Clear</button>
       </div>
@@ -2880,7 +2947,7 @@ async function renderPapers(summaries, abstracts, container, opts = {}) {
     return;
   }
 
-  const { newPmids = new Set(), readSet = new Set(), notesMap = {}, journalPrefs = [], tabId = '' } = opts;
+  const { newPmids = new Set(), readSet = new Set(), notesMap = {}, journalPrefs = [], tabId = '', starredSet = new Set(), hiddenSet = new Set() } = opts;
 
   currentTabPapers = summaries.map(s => ({
     pmid:     s.uid,
@@ -2909,18 +2976,20 @@ async function renderPapers(summaries, abstracts, container, opts = {}) {
     const title     = s.title || '(No title)';
     const authors   = formatAuthors(s.authors);
     const abstract  = abstracts[pmid] || '(Abstract not available — view on PubMed.)';
-    const isNew     = newPmids.has(pmid);
-    const isRead    = readSet.has(pmid);
-    const isUnread  = !isRead;
-    const hasNote   = !!notesMap[pmid];
+    const isNew      = newPmids.has(pmid);
+    const isRead     = readSet.has(pmid);
+    const isUnread   = !isRead;
+    const hasNote    = !!notesMap[pmid];
     const isPriority = isPreferredJournal(journal, journalPrefs);
-    const dupTabs   = getDuplicateTabs(pmid, tabId);
+    const isStarred  = starredSet.has(pmid);
+    const dupTabs    = getDuplicateTabs(pmid, tabId);
     const { doi, pmc } = extractDOI(s);
 
     const card = document.createElement('div');
     card.className = 'paper-card' +
-      (isUnread  ? ' unread'      : '') +
-      (isPriority ? ' is-priority' : '') +
+      (isUnread   ? ' unread'       : '') +
+      (isPriority ? ' is-priority'  : '') +
+      (isStarred  ? ' is-starred'   : '') +
       (dupTabs.length ? ' is-duplicate' : '');
     card.dataset.pmid = pmid;
 
@@ -2945,7 +3014,9 @@ async function renderPapers(summaries, abstracts, container, opts = {}) {
           ${dupHtml}
         </div>
         <div class="paper-title-row">
+          <button class="btn-star ${isStarred ? 'starred' : ''}" data-pmid="${pmid}" title="${isStarred ? 'Unstar' : 'Star this paper'}">${isStarred ? '★' : '☆'}</button>
           <div class="paper-title">${escHtml(title)}</div>
+          <button class="btn-dismiss" data-pmid="${pmid}" title="Dismiss this paper">✕</button>
           <span class="expand-chevron">▶</span>
         </div>
         <div class="paper-authors">${escHtml(authors)}</div>
@@ -2981,9 +3052,22 @@ async function renderPapers(summaries, abstracts, container, opts = {}) {
         <div class="note-save-indicator" id="note-indicator-${pmid}"></div>
       </div>`;
 
-    // Click card-body to toggle open
-    card.querySelector('.card-body').addEventListener('click', () => {
+    // Click card-body to toggle open (but not on star/dismiss)
+    card.querySelector('.card-body').addEventListener('click', e => {
+      if (e.target.closest('.btn-star') || e.target.closest('.btn-dismiss')) return;
       card.classList.toggle('open');
+    });
+
+    // Star button
+    card.querySelector('.btn-star').addEventListener('click', e => {
+      e.stopPropagation();
+      toggleStarPaper(pmid, e.currentTarget, card);
+    });
+
+    // Dismiss button
+    card.querySelector('.btn-dismiss').addEventListener('click', e => {
+      e.stopPropagation();
+      dismissPaper(pmid, tabId, card);
     });
 
     // Read button
@@ -3145,11 +3229,26 @@ async function loadTab(i) {
 
     // Journal prefs for this tab
     const journalPrefs = getJournalPrefs(tab.id);
+    const starredSet   = getStarredSet();
+    const hiddenSet    = getHiddenSet(tab.id);
+
+    // Filter out dismissed papers
+    const visibleSummaries = summaries.filter(s => !hiddenSet.has(s.uid));
+    const hiddenCount = summaries.length - visibleSummaries.length;
 
     area.innerHTML = '';
     renderTabScratchpad(area, tab.id);
     await renderKeyPapersSection(tab.id, kpContainer);
     area.appendChild(kpContainer);
+
+    // Hidden-papers restore bar
+    if (hiddenCount > 0) {
+      const bar = document.createElement('div');
+      bar.className = 'hidden-restore-bar';
+      bar.innerHTML = `<span>${hiddenCount} paper${hiddenCount !== 1 ? 's' : ''} hidden</span>
+        <button onclick="restoreHidden('${tab.id}')">↩ Restore all</button>`;
+      area.appendChild(bar);
+    }
 
     // Live results divider
     const divider = document.createElement('div');
@@ -3159,7 +3258,7 @@ async function loadTab(i) {
       : `<span>🔴 Live PubMed Results · Last ${DAYS} days</span>`;
     area.appendChild(divider);
 
-    await renderPapers(summaries, abstractsMap, area, { newPmids, readSet, notesMap, journalPrefs, tabId: tab.id });
+    await renderPapers(visibleSummaries, abstractsMap, area, { newPmids, readSet, notesMap, journalPrefs, tabId: tab.id, starredSet, hiddenSet });
 
   } catch (err) {
     document.getElementById('resultCount').textContent = '';
@@ -3961,7 +4060,7 @@ async function updateTabUnreadBadge(tabId) {
 }
 
 // ── 4. Filter bar ─────────────────────────────────────────────────────────────
-let activeFilters = { keyword: '', journal: '', unreadOnly: false, priorityOnly: false };
+let activeFilters = { keyword: '', journal: '', unreadOnly: false, priorityOnly: false, starredOnly: false };
 
 function toggleFilterBar() {
   const bar = document.getElementById('filterBar');
@@ -3998,14 +4097,16 @@ function applyFilters() {
     const title    = (titleEl?.textContent || '').toLowerCase();
     const abstract = (abstractEl?.textContent || '').toLowerCase();
     const jText    = (journalEl?.textContent || '').toLowerCase();
-    const isUnread = card.classList.contains('unread');
+    const isUnread   = card.classList.contains('unread');
     const isPriority = card.classList.contains('is-priority');
+    const isStarred  = card.classList.contains('is-starred');
 
     let visible = true;
     if (kw      && !title.includes(kw) && !abstract.includes(kw)) visible = false;
     if (journal && !jText.includes(journal)) visible = false;
-    if (activeFilters.unreadOnly  && !isUnread)   visible = false;
+    if (activeFilters.unreadOnly   && !isUnread)   visible = false;
     if (activeFilters.priorityOnly && !isPriority) visible = false;
+    if (activeFilters.starredOnly  && !isStarred)  visible = false;
 
     card.style.display = visible ? '' : 'none';
     if (visible) shown++;
@@ -4013,22 +4114,29 @@ function applyFilters() {
 
   const countEl = document.getElementById('filterCount');
   if (countEl) {
-    const hasFilter = kw || journal || activeFilters.unreadOnly || activeFilters.priorityOnly;
+    const hasFilter = kw || journal || activeFilters.unreadOnly || activeFilters.priorityOnly || activeFilters.starredOnly;
     countEl.textContent = hasFilter ? `${shown} of ${total} papers` : '';
   }
 }
 
 function clearFilters() {
-  activeFilters = { keyword: '', journal: '', unreadOnly: false, priorityOnly: false };
+  activeFilters = { keyword: '', journal: '', unreadOnly: false, priorityOnly: false, starredOnly: false };
   const ki = document.getElementById('filterKeyword');
   const js = document.getElementById('filterJournal');
   if (ki) ki.value = '';
   if (js) js.value = '';
   document.getElementById('filterUnreadBtn')?.classList.remove('active');
   document.getElementById('filterPriorityBtn')?.classList.remove('active');
+  document.getElementById('filterStarredBtn')?.classList.remove('active');
   document.querySelectorAll('.paper-card[data-pmid]').forEach(c => { c.style.display = ''; });
   const countEl = document.getElementById('filterCount');
   if (countEl) countEl.textContent = '';
+}
+
+function toggleFilterStarred() {
+  activeFilters.starredOnly = !activeFilters.starredOnly;
+  document.getElementById('filterStarredBtn').classList.toggle('active', activeFilters.starredOnly);
+  applyFilters();
 }
 
 function populateJournalFilter(summaries) {
@@ -4918,6 +5026,75 @@ function followAuthor(btn, authorName) {
 
   btn.textContent = '✓ Following'; btn.classList.add('active');
   setTimeout(() => { btn.textContent = '👤 Follow'; btn.classList.remove('active'); }, 2500);
+}
+
+// ════════════════════════════════════════════════════════════
+// STAR PAPERS
+// ════════════════════════════════════════════════════════════
+
+const STARRED_KEY = 'crc-starred';
+
+function getStarredSet() {
+  try { return new Set(JSON.parse(localStorage.getItem(STARRED_KEY)) || []); } catch { return new Set(); }
+}
+
+function saveStarredSet(set) {
+  localStorage.setItem(STARRED_KEY, JSON.stringify([...set]));
+}
+
+function toggleStarPaper(pmid, btn, card) {
+  const starred = getStarredSet();
+  const isNowStarred = !starred.has(pmid);
+  if (isNowStarred) starred.add(pmid); else starred.delete(pmid);
+  saveStarredSet(starred);
+  btn.textContent = isNowStarred ? '★' : '☆';
+  btn.classList.toggle('starred', isNowStarred);
+  btn.title = isNowStarred ? 'Unstar' : 'Star this paper';
+  card.classList.toggle('is-starred', isNowStarred);
+}
+
+// ════════════════════════════════════════════════════════════
+// DISMISS (HIDE) PAPERS
+// ════════════════════════════════════════════════════════════
+
+function hiddenKey(tabId) { return `crc-hidden-${tabId}`; }
+
+function getHiddenSet(tabId) {
+  try { return new Set(JSON.parse(localStorage.getItem(hiddenKey(tabId))) || []); } catch { return new Set(); }
+}
+
+function saveHiddenSet(tabId, set) {
+  localStorage.setItem(hiddenKey(tabId), JSON.stringify([...set]));
+}
+
+function dismissPaper(pmid, tabId, card) {
+  // Animate out, then store
+  card.classList.add('dismissing');
+  card.addEventListener('animationend', () => {
+    card.remove();
+    const hidden = getHiddenSet(tabId);
+    hidden.add(pmid);
+    saveHiddenSet(tabId, hidden);
+    // Update the restore bar count
+    const bar = document.querySelector('.hidden-restore-bar');
+    if (bar) {
+      const n = getHiddenSet(tabId).size;
+      bar.querySelector('span').textContent = `${n} paper${n !== 1 ? 's' : ''} hidden`;
+    } else {
+      // Create bar fresh
+      const newBar = document.createElement('div');
+      newBar.className = 'hidden-restore-bar';
+      newBar.innerHTML = `<span>1 paper hidden</span>
+        <button onclick="restoreHidden('${tabId}')">↩ Restore all</button>`;
+      const list = document.querySelector('.paper-list');
+      list?.parentNode.insertBefore(newBar, list);
+    }
+  }, { once: true });
+}
+
+function restoreHidden(tabId) {
+  localStorage.removeItem(hiddenKey(tabId));
+  loadTab(currentTab);
 }
 
 // ── Escape HTML ───────────────────────────────────────────────────────────────
