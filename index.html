@@ -3192,17 +3192,20 @@ function updateTabUnreadBadgeSync(tabId, unreadCount) {
 }
 
 // ── IndexedDB ─────────────────────────────────────────────────────────────────
-const DB_NAME  = 'digest-saved-papers';
+const DB_NAME   = 'digest-saved-papers';
 const DB_STORE  = 'papers';
 const DB_PINNED = 'pinned_papers';
 const DB_NOTES  = 'notes';
 const DB_READ   = 'read_papers';
+const DB_PDF_FILES  = 'pdf_files';
+const DB_PDF_ANNOTS = 'pdf_annotations';
 let _db = null;
 
+// Single unified DB opener — all stores, version 4
 function openDB() {
   return new Promise((resolve, reject) => {
     if (_db) return resolve(_db);
-    const req = indexedDB.open(DB_NAME, 3);
+    const req = indexedDB.open(DB_NAME, 4);
     req.onupgradeneeded = e => {
       const d = e.target.result;
       if (!d.objectStoreNames.contains(DB_STORE)) {
@@ -3212,18 +3215,16 @@ function openDB() {
       }
       if (!d.objectStoreNames.contains(DB_PINNED)) {
         const ps = d.createObjectStore(DB_PINNED, { keyPath: 'id' });
-        ps.createIndex('tabId',   'tabId',   { unique: false });
-        ps.createIndex('pinnedAt','pinnedAt',{ unique: false });
+        ps.createIndex('tabId',    'tabId',    { unique: false });
+        ps.createIndex('pinnedAt', 'pinnedAt', { unique: false });
       }
-      if (!d.objectStoreNames.contains(DB_NOTES)) {
-        d.createObjectStore(DB_NOTES, { keyPath: 'pmid' });
-      }
-      if (!d.objectStoreNames.contains(DB_READ)) {
-        d.createObjectStore(DB_READ, { keyPath: 'pmid' });
-      }
+      if (!d.objectStoreNames.contains(DB_NOTES))     d.createObjectStore(DB_NOTES,     { keyPath: 'pmid' });
+      if (!d.objectStoreNames.contains(DB_READ))      d.createObjectStore(DB_READ,      { keyPath: 'pmid' });
+      if (!d.objectStoreNames.contains(DB_PDF_FILES)) d.createObjectStore(DB_PDF_FILES, { keyPath: 'pmid' });
+      if (!d.objectStoreNames.contains(DB_PDF_ANNOTS))d.createObjectStore(DB_PDF_ANNOTS,{ keyPath: 'id'   });
     };
-    req.onsuccess  = e => { _db = e.target.result; resolve(_db); };
-    req.onerror    = e => reject(e.target.error);
+    req.onsuccess = e => { _db = e.target.result; resolve(_db); };
+    req.onerror   = e => reject(e.target.error);
   });
 }
 
@@ -4305,42 +4306,11 @@ async function exportAllNotesToPDF() {
 }
 
 // ════════════════════════════════════════════════════════════
-// PDF STORAGE (IndexedDB — store: pdf_files, pdf_annotations)
+// PDF STORAGE (IndexedDB — stores: pdf_files, pdf_annotations)
 // ════════════════════════════════════════════════════════════
 
-const DB_PDF_FILES  = 'pdf_files';
-const DB_PDF_ANNOTS = 'pdf_annotations';
-
-// Upgrade DB to v4 on next open if stores missing
-async function openDBv4() {
-  return new Promise((resolve, reject) => {
-    if (_db && _db.objectStoreNames.contains(DB_PDF_FILES)) return resolve(_db);
-    // Close existing connection so we can upgrade
-    if (_db) { _db.close(); _db = null; }
-    const req = indexedDB.open(DB_NAME, 4);
-    req.onupgradeneeded = e => {
-      const d = e.target.result;
-      // Keep existing stores untouched
-      if (!d.objectStoreNames.contains(DB_STORE)) {
-        const s = d.createObjectStore(DB_STORE, { keyPath: 'pmid' });
-        s.createIndex('tabId','tabId',{unique:false}); s.createIndex('savedAt','savedAt',{unique:false});
-      }
-      if (!d.objectStoreNames.contains(DB_PINNED)) {
-        const ps = d.createObjectStore(DB_PINNED, { keyPath: 'id' });
-        ps.createIndex('tabId','tabId',{unique:false}); ps.createIndex('pinnedAt','pinnedAt',{unique:false});
-      }
-      if (!d.objectStoreNames.contains(DB_NOTES)) d.createObjectStore(DB_NOTES, { keyPath: 'pmid' });
-      if (!d.objectStoreNames.contains(DB_READ))  d.createObjectStore(DB_READ,  { keyPath: 'pmid' });
-      if (!d.objectStoreNames.contains(DB_PDF_FILES))  d.createObjectStore(DB_PDF_FILES,  { keyPath: 'pmid' });
-      if (!d.objectStoreNames.contains(DB_PDF_ANNOTS)) d.createObjectStore(DB_PDF_ANNOTS, { keyPath: 'id' }); // id = pmid:page:idx
-    };
-    req.onsuccess  = e => { _db = e.target.result; resolve(_db); };
-    req.onerror    = e => reject(e.target.error);
-  });
-}
-
 async function dbSavePdf(pmid, arrayBuffer) {
-  const d = await openDBv4();
+  const d = await openDB();
   return new Promise((res, rej) => {
     const tx = d.transaction(DB_PDF_FILES, 'readwrite');
     tx.objectStore(DB_PDF_FILES).put({ pmid, data: arrayBuffer, savedAt: Date.now() });
@@ -4349,7 +4319,7 @@ async function dbSavePdf(pmid, arrayBuffer) {
 }
 
 async function dbGetPdf(pmid) {
-  const d = await openDBv4();
+  const d = await openDB();
   return new Promise((res, rej) => {
     const req = d.transaction(DB_PDF_FILES, 'readonly').objectStore(DB_PDF_FILES).get(pmid);
     req.onsuccess = () => res(req.result?.data || null);
@@ -4358,7 +4328,7 @@ async function dbGetPdf(pmid) {
 }
 
 async function dbHasPdf(pmid) {
-  const d = await openDBv4();
+  const d = await openDB();
   return new Promise((res, rej) => {
     const req = d.transaction(DB_PDF_FILES, 'readonly').objectStore(DB_PDF_FILES).getKey(pmid);
     req.onsuccess = () => res(!!req.result);
@@ -4368,7 +4338,7 @@ async function dbHasPdf(pmid) {
 
 // Annotations: stored as { id: 'pmid:page:ts', pmid, page, type, color, x, y, w, h, text }
 async function dbSaveAnnotation(annot) {
-  const d = await openDBv4();
+  const d = await openDB();
   return new Promise((res, rej) => {
     const tx = d.transaction(DB_PDF_ANNOTS, 'readwrite');
     tx.objectStore(DB_PDF_ANNOTS).put(annot);
@@ -4377,7 +4347,7 @@ async function dbSaveAnnotation(annot) {
 }
 
 async function dbDeleteAnnotation(id) {
-  const d = await openDBv4();
+  const d = await openDB();
   return new Promise((res, rej) => {
     const tx = d.transaction(DB_PDF_ANNOTS, 'readwrite');
     tx.objectStore(DB_PDF_ANNOTS).delete(id);
@@ -4386,7 +4356,7 @@ async function dbDeleteAnnotation(id) {
 }
 
 async function dbGetAnnotationsForPage(pmid, page) {
-  const d = await openDBv4();
+  const d = await openDB();
   return new Promise((res, rej) => {
     const req = d.transaction(DB_PDF_ANNOTS, 'readonly').objectStore(DB_PDF_ANNOTS).getAll();
     req.onsuccess = () => res((req.result || []).filter(a => a.pmid === pmid && a.page === page));
@@ -4963,9 +4933,12 @@ function setHeaderHeight() {
 setHeaderHeight();
 window.addEventListener('resize', setHeaderHeight);
 
-buildTabs();
-updateKeyIndicator();
-loadTab(0);
+// Warm up DB first so the v4 upgrade runs before anything tries to use it
+openDB().catch(e => console.warn('IndexedDB init failed:', e)).finally(() => {
+  buildTabs();
+  updateKeyIndicator();
+  loadTab(0);
+});
 </script>
 </body>
 </html>
