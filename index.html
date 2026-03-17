@@ -486,14 +486,95 @@
       left: 0; top: 0; bottom: 0;
       width: 3px;
       background: var(--border2);
-      transition: background 0.15s;
+      transition: background 0.2s;
       border-radius: 10px 0 0 10px;
     }
-    .paper-card:hover::before         { background: var(--accent2); }
-    .paper-card.open::before          { background: var(--accent); }
     .paper-card.is-priority::before   { background: var(--gold); }
-    .paper-card.unread::before        { background: rgba(124,158,245,0.55); }
-    .paper-card.unread.open::before   { background: var(--accent); }
+    .paper-card.is-starred::before    { background: var(--gold) !important; }
+
+    /* ── Per-card colour labels ─────────────────────────────── */
+    /* Each colour class overrides the stripe and tints the card */
+    .paper-card.clr-red    { background: rgba(239,68,68,0.05);   border-color: rgba(239,68,68,0.25); }
+    .paper-card.clr-orange { background: rgba(249,115,22,0.05);  border-color: rgba(249,115,22,0.25); }
+    .paper-card.clr-yellow { background: rgba(234,179,8,0.05);   border-color: rgba(234,179,8,0.25); }
+    .paper-card.clr-green  { background: rgba(34,197,94,0.05);   border-color: rgba(34,197,94,0.25); }
+    .paper-card.clr-blue   { background: rgba(59,130,246,0.05);  border-color: rgba(59,130,246,0.25); }
+    .paper-card.clr-purple { background: rgba(168,85,247,0.05);  border-color: rgba(168,85,247,0.25); }
+    .paper-card.clr-teal   { background: rgba(20,184,166,0.05);  border-color: rgba(20,184,166,0.25); }
+
+    .paper-card.clr-red::before    { background: #ef4444 !important; }
+    .paper-card.clr-orange::before { background: #f97316 !important; }
+    .paper-card.clr-yellow::before { background: #eab308 !important; }
+    .paper-card.clr-green::before  { background: #22c55e !important; }
+    .paper-card.clr-blue::before   { background: #3b82f6 !important; }
+    .paper-card.clr-purple::before { background: #a855f7 !important; }
+    .paper-card.clr-teal::before   { background: #14b8a6 !important; }
+
+    /* Hover/open tints stronger */
+    .paper-card.clr-red:hover,    .paper-card.clr-red.open    { background: rgba(239,68,68,0.09); }
+    .paper-card.clr-orange:hover, .paper-card.clr-orange.open { background: rgba(249,115,22,0.09); }
+    .paper-card.clr-yellow:hover, .paper-card.clr-yellow.open { background: rgba(234,179,8,0.09); }
+    .paper-card.clr-green:hover,  .paper-card.clr-green.open  { background: rgba(34,197,94,0.09); }
+    .paper-card.clr-blue:hover,   .paper-card.clr-blue.open   { background: rgba(59,130,246,0.09); }
+    .paper-card.clr-purple:hover, .paper-card.clr-purple.open { background: rgba(168,85,247,0.09); }
+    .paper-card.clr-teal:hover,   .paper-card.clr-teal.open   { background: rgba(20,184,166,0.09); }
+
+    /* Colour-dot button in title row */
+    .btn-colour {
+      flex-shrink: 0;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border2);
+      background: var(--bg2);
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+      padding: 0;
+      margin-top: 3px;
+      position: relative;
+    }
+    .btn-colour:hover { transform: scale(1.25); border-color: var(--text2); }
+    .btn-colour.has-colour { border-color: transparent; }
+
+    /* Colour picker popup */
+    .colour-picker-popup {
+      position: absolute;
+      z-index: 200;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 160px;
+      animation: fadeUp 0.15s ease;
+    }
+    .colour-picker-popup .cp-row {
+      display: flex; gap: 7px; align-items: center; flex-wrap: wrap;
+    }
+    .colour-picker-popup .cp-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px; color: var(--muted);
+      letter-spacing: 0.1em; text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .cp-swatch {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.12s, border-color 0.12s;
+      flex-shrink: 0;
+    }
+    .cp-swatch:hover        { transform: scale(1.2); }
+    .cp-swatch.active       { border-color: #fff; transform: scale(1.15); }
+    .cp-swatch.cp-none      { background: var(--bg); border-color: var(--border2); position: relative; }
+    .cp-swatch.cp-none::after {
+      content: '✕'; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; color: var(--muted);
+    }
 
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(8px); }
@@ -1427,13 +1508,37 @@
     }
 
     /* ── 3. Read / Unread ── */
-    .paper-card.unread .paper-title { color: #eef3fd; }
+    /* Unread: bright stripe, tinted background, vivid title */
+    .paper-card.unread {
+      border-color: rgba(124,158,245,0.28);
+      background: rgba(124,158,245,0.04);
+    }
+    .paper-card.unread::before        { background: var(--accent); }
+    .paper-card.unread:hover::before  { background: #a0b8ff; }
+    .paper-card.unread.open::before   { background: #a0b8ff; }
+    .paper-card.unread .paper-title   { color: #dde8ff; font-weight: 500; }
+    .paper-card.unread .paper-num     { border-color: rgba(124,158,245,0.35); color: var(--accent); }
+
+    /* Read: dimmed – stripe goes grey, text fades, slight opacity */
+    .paper-card:not(.unread) {
+      opacity: 0.82;
+    }
+    .paper-card:not(.unread):hover,
+    .paper-card:not(.unread).open {
+      opacity: 1;
+    }
+    .paper-card:not(.unread)::before        { background: var(--border2); }
+    .paper-card:not(.unread):hover::before  { background: var(--accent2); }
+    .paper-card:not(.unread).open::before   { background: var(--accent); }
+    .paper-card:not(.unread) .paper-title   { color: var(--text2); font-weight: 400; }
+    .paper-card:not(.unread) .paper-num     { opacity: 0.6; }
 
     .unread-dot {
       width: 6px; height: 6px;
       background: var(--accent);
       border-radius: 50%;
       flex-shrink: 0;
+      box-shadow: 0 0 5px rgba(124,158,245,0.6);
     }
 
     .tab-unread-badge {
@@ -2576,11 +2681,18 @@ function ncbiKey() {
 function ncbiParams(base) {
   const key = ncbiKey();
   if (key) base.api_key = key;
+  // NCBI usage policy: always identify the tool and contact email
+  base.tool  = 'literature-digest';
+  base.email = 'digest@example.com';
   return new URLSearchParams(base);
 }
 const BASE_SEARCH  = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi';
 const BASE_FETCH   = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi';
 const BASE_SUMMARY = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi';
+
+// Respect NCBI rate limit: max 3 req/s without key, 10/s with key
+// We serialise chunks with a small gap to stay safely under the limit
+const ncbiDelay = () => new Promise(r => setTimeout(r, ncbiKey() ? 120 : 400));
 
 let currentTab = 0;
 let abstractCache = {};
@@ -2860,23 +2972,30 @@ function minDate() {
 }
 
 async function searchPubMed(query) {
-  // First get the total count
-  const countRes = await fetch(`${BASE_SEARCH}?${ncbiParams({
+  const today   = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
+  const mindate = minDate();
+
+  // Count first
+  const countUrl = `${BASE_SEARCH}?${ncbiParams({
     db: 'pubmed', retmode: 'json', retmax: 0,
-    datetype: 'pdat', mindate: minDate(),
-    maxdate: new Date().toISOString().slice(0, 10).replace(/-/g, '/'), term: query,
-  })}`);
-  if (!countRes.ok) throw new Error('Search failed: ' + countRes.status);
+    datetype: 'pdat', mindate, maxdate: today, term: query,
+  })}`;
+  const countRes = await fetch(countUrl);
+  if (!countRes.ok) throw new Error(`PubMed search failed (${countRes.status})`);
   const total = parseInt((await countRes.json()).esearchresult?.count ?? '0', 10);
   if (!total) return [];
 
+  // Respect rate limit between requests
+  await ncbiDelay();
+
   const retmax = Math.min(total, 500);
-  const res = await fetch(`${BASE_SEARCH}?${ncbiParams({
-    db: 'pubmed', retmode: 'json', retmax, sort: 'pub+date',
-    datetype: 'pdat', mindate: minDate(),
-    maxdate: new Date().toISOString().slice(0, 10).replace(/-/g, '/'), term: query,
-  })}`);
-  if (!res.ok) throw new Error('Search failed: ' + res.status);
+  // Build URL manually to keep sort=pub+date with a literal +
+  const params = ncbiParams({
+    db: 'pubmed', retmode: 'json', retmax,
+    datetype: 'pdat', mindate, maxdate: today, term: query,
+  });
+  const res = await fetch(`${BASE_SEARCH}?${params}&sort=pub+date`);
+  if (!res.ok) throw new Error(`PubMed search failed (${res.status})`);
   return (await res.json()).esearchresult?.idlist ?? [];
 }
 
@@ -2888,13 +3007,17 @@ async function fetchSummaries(ids) {
   const CHUNK = 200;
   const chunks = [];
   for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
-  const results = await Promise.all(chunks.map(async chunk => {
+
+  const results = [];
+  for (const chunk of chunks) {
+    if (results.length) await ncbiDelay(); // pause between chunks
     const res = await fetch(`${BASE_SUMMARY}?${ncbiParams({ db: 'pubmed', retmode: 'json', id: chunk.join(',') })}`);
-    if (!res.ok) throw new Error('Summary fetch failed');
+    if (!res.ok) throw new Error(`Summary fetch failed (${res.status})`);
     const result = (await res.json()).result;
-    return chunk.map(id => { const s = result[id]; if (s) summaryCache[id] = s; return s; }).filter(Boolean);
-  }));
-  return results.flat();
+    const items = chunk.map(id => { const s = result[id]; if (s) summaryCache[id] = s; return s; }).filter(Boolean);
+    results.push(...items);
+  }
+  return results;
 }
 
 // Batch-fetch all abstracts at once via MEDLINE text format
@@ -2905,7 +3028,8 @@ async function batchFetchAbstracts(ids) {
   const chunks = [];
   for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
 
-  await Promise.all(chunks.map(async chunk => {
+  for (const chunk of chunks) {
+    await ncbiDelay(); // always pause — abstracts come after summaries
     const text = await (await fetch(`${BASE_FETCH}?${ncbiParams({
       db: 'pubmed', retmode: 'text', rettype: 'medline', id: chunk.join(',')
     })}`)).text();
@@ -2925,7 +3049,7 @@ async function batchFetchAbstracts(ids) {
       }
       map[pmid] = abstract.trim() || '(No abstract available — view on PubMed.)';
     });
-  }));
+  }
   return map;
 }
 
@@ -2947,7 +3071,7 @@ async function renderPapers(summaries, abstracts, container, opts = {}) {
     return;
   }
 
-  const { newPmids = new Set(), readSet = new Set(), notesMap = {}, journalPrefs = [], tabId = '', starredSet = new Set(), hiddenSet = new Set() } = opts;
+  const { newPmids = new Set(), readSet = new Set(), notesMap = {}, journalPrefs = [], tabId = '', starredSet = new Set(), hiddenSet = new Set(), colourMap = {} } = opts;
 
   currentTabPapers = summaries.map(s => ({
     pmid:     s.uid,
@@ -2985,11 +3109,14 @@ async function renderPapers(summaries, abstracts, container, opts = {}) {
     const dupTabs    = getDuplicateTabs(pmid, tabId);
     const { doi, pmc } = extractDOI(s);
 
+    const cardColour = colourMap[pmid] || '';
+
     const card = document.createElement('div');
     card.className = 'paper-card' +
-      (isUnread   ? ' unread'       : '') +
-      (isPriority ? ' is-priority'  : '') +
-      (isStarred  ? ' is-starred'   : '') +
+      (isUnread    ? ' unread'       : '') +
+      (isPriority  ? ' is-priority'  : '') +
+      (isStarred   ? ' is-starred'   : '') +
+      (cardColour  ? ` clr-${cardColour}` : '') +
       (dupTabs.length ? ' is-duplicate' : '');
     card.dataset.pmid = pmid;
 
@@ -3016,6 +3143,8 @@ async function renderPapers(summaries, abstracts, container, opts = {}) {
         <div class="paper-title-row">
           <button class="btn-star ${isStarred ? 'starred' : ''}" data-pmid="${pmid}" title="${isStarred ? 'Unstar' : 'Star this paper'}">${isStarred ? '★' : '☆'}</button>
           <div class="paper-title">${escHtml(title)}</div>
+          <button class="btn-colour ${cardColour ? 'has-colour' : ''}" data-pmid="${pmid}" title="Label colour"
+            style="${cardColour ? `background:${COLOURS[cardColour]};border-color:${COLOURS[cardColour]}` : ''}"></button>
           <button class="btn-dismiss" data-pmid="${pmid}" title="Dismiss this paper">✕</button>
           <span class="expand-chevron">▶</span>
         </div>
@@ -3052,9 +3181,9 @@ async function renderPapers(summaries, abstracts, container, opts = {}) {
         <div class="note-save-indicator" id="note-indicator-${pmid}"></div>
       </div>`;
 
-    // Click card-body to toggle open (but not on star/dismiss)
+    // Click card-body to toggle open (but not on star/colour/dismiss)
     card.querySelector('.card-body').addEventListener('click', e => {
-      if (e.target.closest('.btn-star') || e.target.closest('.btn-dismiss')) return;
+      if (e.target.closest('.btn-star') || e.target.closest('.btn-dismiss') || e.target.closest('.btn-colour')) return;
       card.classList.toggle('open');
     });
 
@@ -3062,6 +3191,12 @@ async function renderPapers(summaries, abstracts, container, opts = {}) {
     card.querySelector('.btn-star').addEventListener('click', e => {
       e.stopPropagation();
       toggleStarPaper(pmid, e.currentTarget, card);
+    });
+
+    // Colour-dot button
+    card.querySelector('.btn-colour').addEventListener('click', e => {
+      e.stopPropagation();
+      openColourPicker(pmid, e.currentTarget, card);
     });
 
     // Dismiss button
@@ -3209,13 +3344,10 @@ async function loadTab(i) {
     const newPmidsList = computeNewPmids(tab.id, ids);
     const newPmids = new Set(newPmidsList);
 
-    // Fetch everything in parallel
-    const [summaries, abstractsMap, readSet, notesMap] = await Promise.all([
-      fetchSummaries(ids),
-      batchFetchAbstracts(ids),
-      getReadSet(),
-      getNotesBatch(ids),
-    ]);
+    // Fetch sequentially to respect NCBI rate limits
+    const [readSet, notesMap] = await Promise.all([getReadSet(), getNotesBatch(ids)]);
+    const summaries    = await fetchSummaries(ids);
+    const abstractsMap = await batchFetchAbstracts(ids);
 
     // Update seen snapshot AFTER computing new
     setSeenPmids(tab.id, new Set(ids));
@@ -3231,6 +3363,7 @@ async function loadTab(i) {
     const journalPrefs = getJournalPrefs(tab.id);
     const starredSet   = getStarredSet();
     const hiddenSet    = getHiddenSet(tab.id);
+    const colourMap    = getColourMap();
 
     // Filter out dismissed papers
     const visibleSummaries = summaries.filter(s => !hiddenSet.has(s.uid));
@@ -3258,7 +3391,7 @@ async function loadTab(i) {
       : `<span>🔴 Live PubMed Results · Last ${DAYS} days</span>`;
     area.appendChild(divider);
 
-    await renderPapers(visibleSummaries, abstractsMap, area, { newPmids, readSet, notesMap, journalPrefs, tabId: tab.id, starredSet, hiddenSet });
+    await renderPapers(visibleSummaries, abstractsMap, area, { newPmids, readSet, notesMap, journalPrefs, tabId: tab.id, starredSet, hiddenSet, colourMap });
 
   } catch (err) {
     document.getElementById('resultCount').textContent = '';
@@ -3322,8 +3455,17 @@ function openDB() {
       if (!d.objectStoreNames.contains(DB_PDF_FILES)) d.createObjectStore(DB_PDF_FILES, { keyPath: 'pmid' });
       if (!d.objectStoreNames.contains(DB_PDF_ANNOTS))d.createObjectStore(DB_PDF_ANNOTS,{ keyPath: 'id'   });
     };
-    req.onsuccess = e => { _db = e.target.result; resolve(_db); };
-    req.onerror   = e => reject(e.target.error);
+    // If another tab has an older version open, close it so upgrade can proceed
+    req.onblocked = () => {
+      if (_db) { _db.close(); _db = null; }
+    };
+    req.onsuccess = e => {
+      _db = e.target.result;
+      // If a newer version opens elsewhere, release our connection
+      _db.onversionchange = () => { _db.close(); _db = null; };
+      resolve(_db);
+    };
+    req.onerror = e => reject(e.target.error);
   });
 }
 
@@ -5029,6 +5171,115 @@ function followAuthor(btn, authorName) {
 }
 
 // ════════════════════════════════════════════════════════════
+// COLOUR LABELS
+// ════════════════════════════════════════════════════════════
+
+const COLOUR_KEY = 'crc-colours';
+
+const COLOURS = {
+  red:    '#ef4444',
+  orange: '#f97316',
+  yellow: '#eab308',
+  green:  '#22c55e',
+  blue:   '#3b82f6',
+  purple: '#a855f7',
+  teal:   '#14b8a6',
+};
+
+const COLOUR_NAMES = {
+  red: 'Red', orange: 'Orange', yellow: 'Yellow',
+  green: 'Green', blue: 'Blue', purple: 'Purple', teal: 'Teal',
+};
+
+function getColourMap() {
+  try { return JSON.parse(localStorage.getItem(COLOUR_KEY)) || {}; } catch { return {}; }
+}
+
+function saveColourMap(map) {
+  localStorage.setItem(COLOUR_KEY, JSON.stringify(map));
+}
+
+let _activeColourPicker = null;
+
+function openColourPicker(pmid, btn, card) {
+  // Close any existing picker
+  if (_activeColourPicker) { _activeColourPicker.remove(); _activeColourPicker = null; }
+
+  const map     = getColourMap();
+  const current = map[pmid] || null;
+
+  const popup = document.createElement('div');
+  popup.className = 'colour-picker-popup';
+
+  // Label row
+  const label = document.createElement('div');
+  label.className = 'cp-label';
+  label.textContent = 'Label colour';
+  popup.appendChild(label);
+
+  // Swatches row
+  const row = document.createElement('div');
+  row.className = 'cp-row';
+
+  // "None" swatch
+  const none = document.createElement('button');
+  none.className = 'cp-swatch cp-none' + (!current ? ' active' : '');
+  none.title = 'No colour';
+  none.addEventListener('click', e => { e.stopPropagation(); applyColour(null); });
+  row.appendChild(none);
+
+  // Colour swatches
+  Object.entries(COLOURS).forEach(([key, hex]) => {
+    const sw = document.createElement('button');
+    sw.className = 'cp-swatch' + (current === key ? ' active' : '');
+    sw.style.background = hex;
+    sw.title = COLOUR_NAMES[key];
+    sw.addEventListener('click', e => { e.stopPropagation(); applyColour(key); });
+    row.appendChild(sw);
+  });
+
+  popup.appendChild(row);
+
+  // Position below the dot button
+  btn.style.position = 'relative';
+  btn.appendChild(popup);
+  _activeColourPicker = popup;
+
+  // Close on outside click
+  const closeHandler = e => {
+    if (!popup.contains(e.target) && e.target !== btn) {
+      popup.remove();
+      _activeColourPicker = null;
+      document.removeEventListener('click', closeHandler, true);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', closeHandler, true), 0);
+
+  function applyColour(colourKey) {
+    const map = getColourMap();
+    // Remove old colour class
+    Object.keys(COLOURS).forEach(k => card.classList.remove(`clr-${k}`));
+
+    if (colourKey) {
+      map[pmid] = colourKey;
+      card.classList.add(`clr-${colourKey}`);
+      btn.style.background     = COLOURS[colourKey];
+      btn.style.borderColor    = COLOURS[colourKey];
+      btn.classList.add('has-colour');
+    } else {
+      delete map[pmid];
+      btn.style.background  = '';
+      btn.style.borderColor = '';
+      btn.classList.remove('has-colour');
+    }
+    saveColourMap(map);
+    popup.remove();
+    _activeColourPicker = null;
+    document.removeEventListener('click', closeHandler, true);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
 // STAR PAPERS
 // ════════════════════════════════════════════════════════════
 
@@ -5110,12 +5361,14 @@ function setHeaderHeight() {
 setHeaderHeight();
 window.addEventListener('resize', setHeaderHeight);
 
-// Warm up DB first so the v4 upgrade runs before anything tries to use it
-openDB().catch(e => console.warn('IndexedDB init failed:', e)).finally(() => {
-  buildTabs();
-  updateKeyIndicator();
-  loadTab(0);
-});
+// Start the UI immediately — don't block on DB init.
+// All DB functions call openDB() lazily themselves.
+buildTabs();
+updateKeyIndicator();
+loadTab(0);
+
+// Warm up DB in background so the upgrade runs early.
+openDB().catch(e => console.warn('IndexedDB init error:', e));
 </script>
 </body>
 </html>
