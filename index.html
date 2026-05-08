@@ -190,12 +190,13 @@
       background: var(--bg2);
       border-right: 1px solid var(--border);
       position: sticky;
-      top: var(--header-h);
-      height: calc(100vh - var(--header-h));
+      top: 0;
+      align-self: flex-start;
+      max-height: 100vh;
       overflow-y: auto;
       scrollbar-width: thin;
       scrollbar-color: var(--border2) transparent;
-      padding: 18px 0 32px;
+      padding: 0 0 32px;
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -203,15 +204,7 @@
     .sidebar::-webkit-scrollbar { width: 3px; }
     .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-    .sidebar-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
-      color: var(--muted);
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      padding: 4px 18px 10px;
-      opacity: 0.6;
-    }
+    .sidebar-label { display: none; }
 
     .tab-btn {
       display: flex;
@@ -2223,8 +2216,10 @@
       .sidebar {
         width: 100%;
         height: auto;
+        max-height: none;
         position: sticky;
-        top: var(--header-h);  /* just below header */
+        top: 0;
+        align-self: auto;
         z-index: 150;
         border-right: none;
         border-bottom: 1px solid var(--border);
@@ -2235,7 +2230,6 @@
         scrollbar-width: none;
         gap: 0;
         background: var(--bg2);
-        /* allow bottom buttons to sit inline */
         align-items: stretch;
       }
       .sidebar::-webkit-scrollbar { display: none; }
@@ -2344,8 +2338,8 @@
       }
       .pubmed-cta { font-size: 11px; padding: 5px 10px; }
 
-      /* Note section */
-      .note-section { padding: 10px 14px 12px; }
+      /* Note / AI sections */
+      .note-section,
 
       /* Key papers section */
       .key-add-row { flex-wrap: wrap; }
@@ -2434,6 +2428,8 @@
           <button class="reset-btn" onclick="clearApiKey()">Clear</button>
         </div>
       </div>
+      <div class="settings-section">
+        <div class="settings-label">Time window</div>
         <div class="settings-desc">Currently showing papers from the last <strong style="color:var(--accent)">90 days</strong>. To change, edit <code>const DAYS = 90</code> in the HTML file.</div>
       </div>
     </div>
@@ -3240,11 +3236,10 @@ async function loadTab(i) {
 
   try {
     area.innerHTML = `<div class="status-msg"><div class="spinner"></div><p>Searching PubMed…</p></div>`;
-    // Reuse pre-cached search results for priority tabs (avoids a double NCBI fetch)
     const ids = tabSearchCache[tab.id] !== undefined
       ? tabSearchCache[tab.id]
       : await searchPubMed(query);
-    delete tabSearchCache[tab.id]; // consume the cache entry
+    delete tabSearchCache[tab.id];
 
     // Key Papers section
     const kpContainer = document.createElement('div');
@@ -4229,8 +4224,7 @@ function populateJournalFilter(summaries) {
   sel.innerHTML = '<option value="">All journals</option>' +
     journals.map(j => `<option value="${escHtml(j.toLowerCase())}">${escHtml(j)}</option>`).join('');
 }
-
-// ── 6. DOI extraction from PubMed summary ────────────────────────────────────
+    // ── 6. DOI extraction from PubMed summary ────────────────────────────────────
 function extractDOI(summary) {
   const ids = summary?.articleids || [];
   const doi = ids.find(a => a.idtype === 'doi')?.value || '';
@@ -4239,9 +4233,8 @@ function extractDOI(summary) {
 }
 
 // ── 7. Cross-tab deduplication — EOCRC & Rectal have priority ────────────────
-const tabPmidCache  = {};
-const claimedPmids  = {}; // pmid → tabId of the first (highest-priority) tab to claim it
-const tabSearchCache = {}; // tabId → raw id[] from searchPubMed — lets loadTab reuse results without double-fetching
+const tabPmidCache = {};
+const claimedPmids = {}; // pmid → tabId of the first (highest-priority) tab to claim it
 
 // Priority order: earlier entry wins. EOCRC always first, Rectal second.
 const DEDUP_PRIORITY = ['eocrc','rectal','colon','msi','targeted','surgery','liver','tme','inflammation','aging','cfdna','qol'];
@@ -4261,16 +4254,17 @@ function filterForTab(tabId, ids) {
   return ids.filter(pmid => claimedPmids[pmid] === tabId);
 }
 
-// Silently pre-fetches a tab's PMIDs so it claims them before lower-priority
-// tabs load. Stores results in tabSearchCache so loadTab can reuse them
-// without a second NCBI round-trip.
+const tabSearchCache = {}; // tabId → raw id[] — lets loadTab reuse without double-fetch
+
+// Silently pre-fetches a tab's PMIDs so it claims them before lower-priority tabs load.
+// Stores results in tabSearchCache so loadTab can reuse without a second NCBI round-trip.
 async function preCacheTab(tabId) {
   const tab = getAllTabs().find(t => t.id === tabId);
   if (!tab || !tab.query) return;
   try {
     const query = savedQueries()[tab.id] || tab.query;
     const ids   = await searchPubMed(query);
-    tabSearchCache[tabId] = ids;   // reused by loadTab to avoid double-fetch
+    tabSearchCache[tabId] = ids;
     registerTabPmids(tabId, ids);
   } catch { /* non-critical — silent */ }
 }
@@ -5272,14 +5266,17 @@ function setHeaderHeight() {
 }
 setHeaderHeight();
 window.addEventListener('resize', setHeaderHeight);
+window.addEventListener('load', setHeaderHeight);
+document.fonts.ready.then(setHeaderHeight);
 
 // Start the UI immediately — don't block on DB init.
 // All DB functions call openDB() lazily themselves.
 buildTabs();
 updateKeyIndicator();
-// Sequentially pre-register EOCRC then Rectal so they permanently claim their
-// papers before any other tab can load. Results are stored in tabSearchCache
-// so loadTab(0) reuses them — EOCRC is not fetched twice from NCBI.
+// Load EOCRC first (tab 0) so it claims its PMIDs, then silently pre-cache
+// Rectal so it claims its unique papers before any other tab can grab them.
+// Pre-register EOCRC then Rectal so they claim their papers before any other tab.
+// Results cached in tabSearchCache so loadTab(0) doesn't double-fetch from NCBI.
 (async () => {
   await preCacheTab('eocrc');
   await preCacheTab('rectal');
